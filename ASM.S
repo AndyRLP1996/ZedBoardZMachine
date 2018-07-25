@@ -7,6 +7,7 @@
 .global memoryread
 .global delay50th
 .global sendtoUART
+.global setupUART
 
 .align 4
 gamememory: .space 2000000

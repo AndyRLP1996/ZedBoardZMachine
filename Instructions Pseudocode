@@ -1,0 +1,124 @@
+# VERIFY
+
+byte_1 = fetch_byte()
+increment_ZPC()
+if (unknown condition)
+{
+	byte_2 = fetch_byte()
+	increment_ZPC()
+}
+counter = 0
+sum = 0
+for i in range(END_OF_HEADER, END_OF_PROGRAM)
+{
+	sum = sum + get_byte(counter)
+	counter = counter + 8
+}
+result = bitwise_and(sum, 0xffff)
+set_pointer_to(28)
+verfication_comparison_variable = fetch_doublebyte_at_pointer()
+if (verification_comparison_variable == result)
+{
+	branch()
+}
+else
+{
+	crash() # hcf
+}
+
+# ADD
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+set_pointer_to(END_OF_Z_INSTRUCTION) # possibly minus one
+destination_Zregister = fetch_byte_at_pointer()
+increment_ZPC()
+result = operand_1 + operand_2
+write_byte(result, destination_Zregister)
+
+# SUB
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+set_pointer_to(END_OF_Z_INSTRUCTION) # possibly minus one
+destination_Zregister = fetch_byte_at_pointer()
+increment_ZPC()
+result = operand_1 - operand_2
+write_byte(result, destination_Zregister)
+
+# MUL
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+set_pointer_to(END_OF_Z_INSTRUCTION) # possibly minus one
+destination_Zregister = fetch_byte_at_pointer()
+increment_ZPC()
+result = operand_1 * operand_2
+write_byte(result, destination_Zregister)
+
+# DIV
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+set_pointer_to(END_OF_Z_INSTRUCTION) # possibly minus one
+destination_Zregister = fetch_byte_at_pointer()
+increment_ZPC()
+result = operand_1 / operand_2
+write_byte(result, destination_Zregister)
+
+# PRINT_NUM
+
+variable_operands[] = fetch_variable_operands() # The first one will be a 16 bit signed number
+variable_operands[0] = convert_num_to_ascii(variable_operands[0])
+print(variable_operands[0])
+
+# JE
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+other_operands[] = fetch_other_operands()
+byte_1 = fetch_byte()
+increment_ZPC()
+if (unknown condition)
+{
+	byte_2 = fetch_byte()
+	increment_ZPC()
+}
+if (operand_1 == operand_2 || operand_1 in other_operands)
+{
+	branch()
+}
+
+# JL
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+byte_1 = fetch_byte()
+increment_ZPC()
+if (unknown condition)
+{
+	byte_2 = fetch_byte()
+	increment_ZPC()
+}
+if (operand_1 < operand_2) # 16-bit arithemtic, result will be wrong for certain inputs
+{
+	branch()
+}
+
+# JG
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+byte_1 = fetch_byte()
+increment_ZPC()
+if (unknown condition)
+{
+	byte_2 = fetch_byte()
+	increment_ZPC()
+}
+if (operand_1 > operand_2) # 16-bit arithemtic, result will be wrong for certain inputs
+{
+	branch()
+}
+
+# RET_POPPED

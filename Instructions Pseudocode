@@ -122,3 +122,137 @@ if (operand_1 > operand_2) # 16-bit arithemtic, result will be wrong for certain
 }
 
 # RET_POPPED
+
+result = pop_Zstack()
+return_from_Zprocedure()
+
+# RET
+
+operand = fetch_operand_1()
+return_from_Zprocedure()
+result = operand
+
+# CALL_2S
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+byte_1 = fetch_byte()
+result = call_Zprocedure(operand_1, operand_2) # operand 1 is the Zprocedure, operand 2 is the input
+write(result, byte_1)
+
+# CALL_2N
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+result = call_Zprocedure(operand_1, operand_2) # operand 1 is the Zprocedure, operand 2 is the input
+
+# PUSH
+
+variable_operands[] = fetch_variable_operands()
+push_Zstack(variable_operands[0])
+
+# PULL
+
+variable_operands[] = fetch_variable_operands() # Karol says these won't exist
+byte_1 = fetch_byte()
+result = pop_Zstack()
+write(result, byte_1)
+
+# PRINT
+
+string = fetch_data()
+string = decode(string)
+print(string)
+
+# TEST_ATTR
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+byte_1 = fetch_byte()
+increment_ZPC()
+if (unknown condition)
+{
+	byte_2 = fetch_byte()
+	increment_ZPC()
+}
+retrieve_six_bytes_which_correspond_to_attribute_set(operand_1) # object table function, operand_1 is which object (multiply it by 14 to get offset into the table)
+result = retrieve_bit_from_object_table(operand_1, operand_2) # another object table function, operand 1 is the object being referred to, operand 2 is the bit being referred to in that object
+if (result == 1)
+{
+	branch()
+}
+
+# SET_ATTR
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+retrieve_six_bytes_which_correspond_to_attribute_set(operand_1) # object table function, operand_1 is which object (multiply it by 14 to get offset into the table)
+set_bit_in_object_table(operand_1, operand_2) # another object table function, operand 1 is the object being referred to, operand 2 is the bit being referred to in that object
+
+# CLEAR_ATTR
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+retrieve_six_bytes_which_correspond_to_attribute_set(operand_1) # object table function, operand_1 is which object (multiply it by 14 to get offset into the table)
+clear_bit_in_object_table(operand_1, operand_2) # another object table function, operand 1 is the object being referred to, operand 2 is the bit being referred to in that object
+
+# INC
+
+operand = fetch_operand() # This operand will always be a byte
+if (operand == 0)
+{
+	result = pop_Zstack()
+	result = result + 1
+	push_Zstack(result)
+}
+else
+{
+	result = read_from_local_Zregisters(operand)
+	result = result + 1
+	write(result, operand)
+}
+
+operand = fetch_operand() # This operand will always be a byte
+if (operand == 0)
+{
+	result = pop_Zstack()
+	result = result - 1
+	push_Zstack(result)
+}
+else
+{
+	result = read_from_local_Zregisters(operand)
+	result = result - 1
+	write(result, operand)
+}
+
+# CALL_1N
+
+operand = fetch_operand()
+call_Zprocedure(operand) # operand 1 is the Zprocedure. Note that callZprocedure also accepts a second input which would be the input for the function, but call_1N is for Zprocedures with no inputs
+
+# MOD
+
+operand_1 = fetch_operand_1()
+operand_2 = fetch_operand_2()
+set_pointer_to(END_OF_Z_INSTRUCTION) # possibly minus one
+destination_Zregister = fetch_byte_at_pointer()
+increment_ZPC()
+result = operand_1 % operand_2
+write_byte(result, destination_Zregister)
+
+# NOT
+
+variable_operands[] = fetch_variable_operands()
+set_pointer_to(END_OF_Z_INSTRUCTION) # possibly minus one
+destination_Zregister = fetch_byte_at_pointer()
+for i in range(0,size(variable_operands[]))
+{
+	variable_operands[i] = not(variable_operands[i])
+}
+write(variable_operands[], destination_Zregister)
+
+# PRINT_CHAR
+
+variable_operands[] = fetch_variable_operands()
+print(variable_operands[1])

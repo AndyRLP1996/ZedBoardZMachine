@@ -10,19 +10,19 @@
 .global setupUART
 
 .align 4
-gamememory: .space 2000000
+zmemory: .space 2000000
 .align 4
-gamestack: .space 1000000
+zstack: .space 1000000
 .align 4
 tempop: .space 256
 .align 4
 dumpingground: .space 500000 ;@for use in case run out of registers
 .align 4
-gamereg: .space 1000000
+zreg: .space 1000000
 .align 4
 
 asm_main:
-	LDR R7, =gamememory
+	LDR R7, =zmemory
 	MOV R4, #0 ;@zpc
 	MOV R5, #0 ;@zsp, reads as 00 in disassembly
 	MOV R6, #0 ;@function call nesting depth
@@ -47,9 +47,9 @@ asm_main:
 uploadmode:
 push {r14}
 	;@ the following code zeroes all memory
-	;@ zeroes gamestack
+	;@ zeroes zstack
 	LDR R12,=1000000
-	LDR R8, =gamestack
+	LDR R8, =zstack
 	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
 	;@zeroes the tempop
 	LDR R12,=256
@@ -64,7 +64,7 @@ push {r14}
 	MOV R8, R7
 	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
 	LDR R12,=1000000
-	LDR R8, =gamereg
+	LDR R8, =zreg
 	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
 
 	CMP R2, #128
@@ -150,17 +150,18 @@ push {r14}
 		;@check 00, two byte constant
 		LDR R1,=0b00110000;@edit
 		ANDS R1, R1, R0
-		BEQ
+		BEQ ;@branch to code for part 9
 
 		;@check 01, one byte constant
 		LDR R1,=0b00010000
 		ANDS R1, R1, R0
-		BNE
+		BNE ;@branch to code for part 9
 
 		;@check 10, one byte register indicator
 		LDR R1,=0b00100000
 		ANDS R1, R1, R0
-		BNE
+		BNE	;@branch to code for part 9
+		;@R1 contains the opcode for all 3 scenarios of atype
 
 	Btype:
 		MOV R12,#2;@opcount
@@ -178,14 +179,34 @@ push {r14}
 		MOV R1,R0
 		LDR R2,=0b00011111
 		AND R1,R2,R1
+		;@R1 now contains opcode for instruction
 
 	Ctype:
+		;@extract bit 5 of byte
+		MOV R1,R0
+		LDR R2,=0b00010000
+		ANDS R1, R1, R2
+		;@check if 0 or 1. if 0, opcount is 2, otherwise is variable
+		MOVEQ R12,#2
+		MOVNE R12,#3 ;@3 indicates variable opcount
+		;@extract instruction indicator
+		MOV R1,R0
+		LDR R2,=0b00011111
+		AND R1,R2,R1
+		;@R1 now contains instruction indicator, R12 contains opcount
+		
+	Xtype: ;@fill in later if time
 
 
 
 	;@insert crash mode here
 	;@BNE crashmode
 	exitgamemode:
+pop {r15}
+
+fetchop:
+push {r14}
+	
 pop {r15}
 
 crashmode:

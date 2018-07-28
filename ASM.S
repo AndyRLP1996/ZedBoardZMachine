@@ -150,18 +150,19 @@ push {r14}
 		;@check 00, two byte constant
 		LDR R1,=0b00110000;@edit
 		ANDS R1, R1, R0
-		BEQ ;@branch to code for part 9
+		BEQ fetchop;@branch to code for part 9
 
 		;@check 01, one byte constant
 		LDR R1,=0b00010000
 		ANDS R1, R1, R0
-		BNE ;@branch to code for part 9
+		BNE fetchop;@branch to code for part 9
 
 		;@check 10, one byte register indicator
 		LDR R1,=0b00100000
 		ANDS R1, R1, R0
-		BNE	;@branch to code for part 9
+		BNE	fetchop;@branch to code for part 9
 		;@R1 contains the opcode for all 3 scenarios of atype
+		BL crashmode;@should only branch if none of the decode branches work
 
 	Btype:
 		MOV R12,#2;@opcount
@@ -180,6 +181,8 @@ push {r14}
 		LDR R2,=0b00011111
 		AND R1,R2,R1
 		;@R1 now contains opcode for instruction
+		BL fetchop
+		;@BL crashmode
 
 	Ctype:
 		;@extract bit 5 of byte
@@ -194,7 +197,9 @@ push {r14}
 		LDR R2,=0b00011111
 		AND R1,R2,R1
 		;@R1 now contains instruction indicator, R12 contains opcount
-		
+		BL fetchop
+		;@BL crashmode
+
 	Xtype: ;@fill in later if time
 
 
@@ -206,7 +211,7 @@ pop {r15}
 
 fetchop:
 push {r14}
-	
+
 pop {r15}
 
 crashmode:

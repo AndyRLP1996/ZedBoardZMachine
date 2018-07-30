@@ -1,4 +1,3 @@
-.global asm_main
 .global delay50th
 .global sendtoUART
 .global setupUART

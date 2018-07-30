@@ -1,6 +1,4 @@
-.global asm_main
 .global uploadmode
-.global memoryread
 
 uploadmode:
 push {r14}

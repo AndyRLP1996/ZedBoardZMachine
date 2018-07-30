@@ -1,11 +1,6 @@
 ;@ final project assembly code
 
 .global asm_main
-.global uploadmode
-.global memoryread
-.global delay50th
-.global sendtoUART
-.global setupUART
 
 .align 4
 zmemory: .space 2000000

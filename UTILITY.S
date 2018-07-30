@@ -2,6 +2,7 @@
 .global delay50th
 .global sendtoUART
 .global setupUART
+.global memoryread
 
 delay50th:
 	push {R0,R14}
@@ -38,3 +39,18 @@ push {R1,R2,R3,R8,R9,R10,R12,r14}
 		MOV R10, #0x117
 		STR R10, [R9]
 pop {R1,R2,R3,R8,R9,R10,R12,r15}
+memoryread:
+;@r0 and r1 are the inputs
+;@r0 should be a pointer
+;@r1 should be an offset
+;@r0 is also the return register
+push {r2,r3,r8,r14}
+	LDR R2, [R0,R1] ;@loads most significant bits
+	ADD R1, R1, #1
+	LDR R3, [R0,R1] ;@loads least significant bits
+	LDR R8,= 256
+	MUL R2, R2, R8
+	ADD R0, R2, R3
+	;@junk instruction:
+	MOV R0, R0
+pop {r2,r3,r8,r15}

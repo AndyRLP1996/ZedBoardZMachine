@@ -1,9 +1,7 @@
 ;@ final project assembly code
 
 .global asm_main
-.global zeroout
-.global upload
-.global checksum
+.global uploadmode
 .global memoryread
 .global delay50th
 .global sendtoUART
@@ -43,43 +41,6 @@ asm_main:
 		BLNE noheadermode ;@objects will be in same location as no header mode
 		BL gamemode
 	B modecheck
-
-uploadmode:
-push {r14}
-	;@ the following code zeroes all memory
-	;@ zeroes zstack
-	LDR R12,=1000000
-	LDR R8, =zstack
-	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
-	;@zeroes the tempop
-	LDR R12,=256
-	LDR R8, =tempop
-	;@zeroes the dumping ground
-	LDR R12,=500000
-	LDR R8, =dumpingground
-	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
-	;@zeroes the game memory
-	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
-	LDR R12,=2000000
-	MOV R8, R7
-	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
-	LDR R12,=1000000
-	LDR R8, =zreg
-	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
-
-	CMP R2, #128
-
-	BLEQ upload
-	CMP R2, #128
-	BLEQ checksum
-	CMP R0, #1 ;@checks that checksum returns true (file is valid)
-	CMP R2, #128
-	MOV R0, R7
-	MOV R1, #28
-	BLEQ memoryread ;@should return 0x942d in r0
-	LDR R1,=0x942d
-	CMP R0, R1 ;@checks that checksum works
-pop {r15}
 
 debugmode:
 push {r14}

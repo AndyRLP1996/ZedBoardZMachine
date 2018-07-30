@@ -1,8 +1,43 @@
 .global asm_main
-.global zeroout
-.global upload
-.global checksum
+.global uploadmode
 .global memoryread
+
+uploadmode:
+push {r14}
+	;@ the following code zeroes all memory
+	;@ zeroes zstack
+	LDR R12,=1000000
+	LDR R8, =zstack
+	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
+	;@zeroes the tempop
+	LDR R12,=256
+	LDR R8, =tempop
+	;@zeroes the dumping ground
+	LDR R12,=500000
+	LDR R8, =dumpingground
+	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
+	;@zeroes the game memory
+	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
+	LDR R12,=2000000
+	MOV R8, R7
+	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
+	LDR R12,=1000000
+	LDR R8, =zreg
+	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
+
+	CMP R2, #128
+
+	BLEQ upload
+	CMP R2, #128
+	BLEQ checksum
+	CMP R0, #1 ;@checks that checksum returns true (file is valid)
+	CMP R2, #128
+	MOV R0, R7
+	MOV R1, #28
+	BLEQ memoryread ;@should return 0x942d in r0
+	LDR R1,=0x942d
+	CMP R0, R1 ;@checks that checksum works
+pop {r15}
 
 zeroout:
 PUSH {R8,R11,R14}
@@ -74,21 +109,6 @@ push {R1,R2,R3,R8,R14}
 	MOVEQ R0, #1
 pop {R1,R2,R3,R8,R15}
 
-memoryread:
-;@r0 and r1 are the inputs
-;@r0 should be a pointer
-;@r1 should be an offset
-;@r0 is also the return register
-push {r2,r3,r8,r14}
-	LDR R2, [R0,R1] ;@loads most significant bits
-	ADD R1, R1, #1
-	LDR R3, [R0,R1] ;@loads least significant bits
-	LDR R8,= 256
-	MUL R2, R2, R8
-	ADD R0, R2, R3
-	;@junk instruction:
-	MOV R0, R0
-pop {r2,r3,r8,r15}
 
 
 

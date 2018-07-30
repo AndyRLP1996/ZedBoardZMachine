@@ -38,6 +38,7 @@ push {R1,R2,R3,R8,R9,R10,R12,r14}
 		MOV R10, #0x117
 		STR R10, [R9]
 pop {R1,R2,R3,R8,R9,R10,R12,r15}
+
 memoryread:
 ;@r0 and r1 are the inputs
 ;@r0 should be a pointer

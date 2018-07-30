@@ -6,25 +6,25 @@ push {r14}
 	;@ zeroes zstack
 	LDR R12,=1000000
 	LDR R8, =zstack
-	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
+	BL zeroout ;@takes R12 as input. input is size of memory to be zeroed
 	;@zeroes the tempop
 	LDR R12,=256
 	LDR R8, =tempop
+	BL zeroout
 	;@zeroes the dumping ground
 	LDR R12,=500000
 	LDR R8, =dumpingground
-	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
+	BL zeroout ;@takes R12 as input. input is size of memory to be zeroed
 	;@zeroes the game memory
-	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
 	LDR R12,=2000000
-	MOV R8, R7
+	MOV R8, R7;@zmemory
+	;@zeroes the zregisters
 	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
 	LDR R12,=1000000
 	LDR R8, =zreg
-	BLEQ zeroout ;@takes R12 as input. input is size of memory to be zeroed
+	BL zeroout ;@takes R12 as input. input is size of memory to be zeroed
 
 	CMP R2, #128
-
 	BLEQ upload
 	CMP R2, #128
 	BLEQ checksum

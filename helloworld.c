@@ -7,3 +7,8 @@ int main()
 
     return 0;
 }
+
+int divide(int R0, int R1)
+{//update to read 16 bit signed arithmetic
+    return R0/R1;
+}

@@ -76,30 +76,30 @@ pop {r12,r15}
 gamemode:
 push {r14}
 	mainloop:
-	LDR R0,[R7,R4];@load opcode
-	ADD R4,R4,#1;@advance ZPC
-	;@extract bits 7 and 6
-	LDR R1,=0b11000000
-	AND R1,R0,R1
-	;@check for A type
-	LDR R2,=0b10000000
-	CMP R2, R1
-	BEQ Atype
-	;@check for B type
-	LDR R2,=0b00000000
-	CMP R2, R1
-	BEQ Btype
-	;@check for C type
-	LDR R2,=0b11000000
-	CMP R2, R1
-	BEQ Ctype
-	;@ load switches to check that board is still in game mode
-		LDR R12, =0x41220000;@switches
-		LDR R1, [R12]
-		AND R1, R1, #128
-		CMP R1, #128
-	BNE exitgamemode
-	;@R0 still has opcode
+		LDR R0,[R7,R4];@load opcode
+		ADD R4,R4,#1;@advance ZPC
+		;@extract bits 7 and 6
+		LDR R1,=0b11000000
+		AND R1,R0,R1
+		;@check for A type
+		LDR R2,=0b10000000
+		CMP R2, R1
+		BEQ Atype
+		;@check for B type
+		LDR R2,=0b00000000
+		CMP R2, R1
+		BEQ Btype
+		;@check for C type
+		LDR R2,=0b11000000
+		CMP R2, R1
+		BEQ Ctype
+		;@ load switches to check that board is still in game mode
+			LDR R12, =0x41220000;@switches
+			LDR R1, [R12]
+			AND R1, R1, #128
+			CMP R1, #128
+		BNE exitgamemode
+		;@R0 still has opcode
 	Atype:
 		LDR R1,=0b00110000
 		MOV R3, R0

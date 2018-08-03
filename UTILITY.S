@@ -66,3 +66,18 @@ push {r2,r3,r8,r14}
 	;@junk instruction:
 	MOV R0, R0
 pop {r2,r3,r8,r15}
+
+memorywrite:
+push {R3,R10,R11,R14}
+	;@takes r0, r1, and r2 as input
+	;@r0 is a 16 bit value and r1 is the destination memory location
+	;@r2 is the offset
+	LDR R3,=0x00ff
+	AND R11, R0, R3 ;@R11 now holds the LSBs
+	LDR R3,=0xff00
+	AND R10,R0,R3
+	MOV R10, R10 LSR #8
+	STR R10, [R1,R2] ;@writes MSBs to desired address
+	ADD R2, R2, #1
+	STR R11, [R1,R2] ;@writes LSBs to next byte
+pop {R3,R10,R11,R15}

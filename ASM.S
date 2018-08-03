@@ -110,31 +110,30 @@ push {r14}
 		MOVEQ R12,#0
 		;@read operand type
 		;@check 00, two byte constant
-		LDR R1,=0b00110000;@edit
-		ANDS R1, R1, R0
-		MOV R10, #1
-		BLEQ fetchop;@branch to code for part 9
+			LDR R1,=0b00110000;@edit
+			ANDS R1, R1, R0
+			MOV R10, #1
+			BLEQ fetchop
 
 		;@check 01, one byte constant
-		LDR R1,=0b00010000
-		ANDS R1, R1, R0
-		MOV R10, #2
-		BLNE fetchop;@branch to code for part 9
+			LDR R1,=0b00010000
+			ANDS R1, R1, R0
+			MOV R10, #2
+			BLNE fetchop
 
 		;@check 10, one byte register indicator
-		LDR R1,=0b00100000
-		ANDS R1, R1, R0
-		MOV R10, #3
-		BLNE fetchop;@branch to code for part 9
+			LDR R1,=0b00100000
+			ANDS R1, R1, R0
+			MOV R10, #3
+			BLNE fetchop
 		;@R1 contains the opcode for all 3 scenarios of atype
-
 		;@check for 11, no operands
-		MOV R10, #4
-		BL fetchop
+			MOV R10, #4
+			BL fetchop
 
 		;@isolates instruction indicator
-		LDR R2,=0b00001111
-		AND R3,R2,R3 ;@R3 now contains isolated instruction indicator
+			LDR R2,=0b00001111
+			AND R3,R2,R3 ;@R3 now contains isolated instruction indicator
 
 		BL decode
 		BL crashmode;@should only branch if none of the decode branches work
@@ -143,55 +142,52 @@ push {r14}
 		MOV R12,#2;@opcount
 		MOV R3, R0
 		;@extract bit 6
-		MOV R1,R0
-		LDR R2,=0b00100000
-		ANDS R1,R2,R1
-		;@zero for one byte constant, 1 for one byte register indicator
-		MOVNE R10, #5
-		MOVEQ R10, #6
-		BL fetchop
+			MOV R1,R0
+			LDR R2,=0b00100000
+			ANDS R1,R2,R1
+			;@zero for one byte constant, 1 for one byte register indicator
+			MOVNE R10, #5
+			MOVEQ R10, #6
+			BL fetchop
 
 		;@extract bit 5
-		MOV R1,R3
-		LDR R2,=0b00010000
-		ANDS R1,R2,R1
-		;@zero for one byte constant, 1 for one byte register indicator
-		MOVNE R10, #7
-		MOVEQ R10, #8
-		BL fetchop
+			MOV R1,R3
+			LDR R2,=0b00010000
+			ANDS R1,R2,R1
+			;@zero for one byte constant, 1 for one byte register indicator
+			MOVNE R10, #7
+			MOVEQ R10, #8
+			BL fetchop
 
 		;@extract bits 4-0
-		LDR R2,=0b00011111
-		AND R3,R2,R3
-		;@R3 now contains instruction indicator
+			LDR R2,=0b00011111
+			AND R3,R2,R3
+			;@R3 now contains instruction indicator
 
 		BL decode
 		;@BL crashmode
 
 	Ctype:
 		;@extract bit 5 of byte
-		MOV R1,R0
-		LDR R2,=0b00010000
-		ANDS R1, R1, R2
-		;@check if 0 or 1. if 0, opcount is 2, otherwise is variable
-		MOVEQ R12,#2
-		MOVNE R12,#3 ;@3 indicates variable opcount
+			MOV R1,R0
+			LDR R2,=0b00010000
+			ANDS R1, R1, R2
+			;@check if 0 or 1. if 0, opcount is 2, if 1, is variable
+			MOVEQ R12,#2
+			MOVNE R12,#3 ;@3 indicates variable opcount
+			BL fetchop
 		;@extract instruction indicator
-		MOV R1,R0
-		LDR R2,=0b00011111
-		AND R1,R2,R1
-		MOV R3, R1
-		;@R3 now contains instruction indicator, R12 contains opcount
-		MOV R10, #9
-		BL fetchop
+			MOV R1,R0
+			LDR R2,=0b00011111
+			AND R1,R2,R1
+			MOV R3, R1
+			;@R3 now contains instruction indicator, R12 contains opcount
+			MOV R10, #9
 
 		BL decode
 		;@BL crashmode
 
 	Xtype: ;@fill in later if time
-
-
-
 	;@insert crash mode here
 	;@BNE crashmode
 	exitgamemode:
@@ -202,18 +198,19 @@ push {r8,r14}
 	;@ at this point R0 still contains the full encoded byte
 	;@MOV R3, R0;@ copies full byte
 	;@input determines which way to fetch operands.
-	;@1 is A type 16 bit constant
-	ADD R1, R4, #1
-	MOV R0, R7
-	BL memoryread ;@R0 now contains the 16 bit constant
-	POPEQ {R8,R15}
-	;@2 is A type 8 bit constant
-	ADD R1, R4, #1
-	MOV R0, R7
-	BL memoryreadbyte
-	POPEQ {R8,R15}
-	;@3 is A type one register
 
+	;@1 is A type 16 bit constant
+		ADD R1, R4, #1
+		MOV R0, R7
+		BL memoryread ;@R0 now contains the 16 bit constant
+		POPEQ {R8,R15}
+	;@2 is A type 8 bit constant
+		ADD R1, R4, #1
+		MOV R0, R7
+		BL memoryreadbyte
+		POPEQ {R8,R15}
+	;@3 is A type one register
+		
 	;@4 is a type no operands
 
 	;@5 is b type first operand one byte constant

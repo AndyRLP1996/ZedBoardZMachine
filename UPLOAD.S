@@ -87,8 +87,8 @@ PUSH {r1,r2,r3,r8,r9,r10,r12,R14}
 POP {r1,r2,r3,r8,r9,r10,r12,R15}
 
 checksum:
-;@R0 is return register
-;@returns 0 if not valid, 1 if valid
+	;@R0 is return register
+	;@returns 0 if not valid, 1 if valid
 push {R1,R2,R3,R8,R14}
 	LDR R1,=0x40
 	LDR R2,=256000

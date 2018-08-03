@@ -2,6 +2,7 @@
 .global sendtoUART
 .global setupUART
 .global memoryread
+.global memoryreadbyte
 
 delay50th:
 	push {R0,R14}
@@ -18,7 +19,7 @@ sendtoUART: ;@treats r0 as input register
 	push {r1,r14} ;@assumes UART is set
 		LDR R1, =0xE0001030 ;@UART itself
 		STR R0, [R1]
-	pop {r1,r15}
+	pop {r1,r15} ;@NOT DONE
 
 setupUART:
 push {R1,R2,R3,R8,R9,R10,R12,r14}
@@ -51,6 +52,17 @@ push {r2,r3,r8,r14}
 	LDR R8,= 256
 	MUL R2, R2, R8
 	ADD R0, R2, R3
+	;@junk instruction:
+	MOV R0, R0
+pop {r2,r3,r8,r15}
+
+memoryreadbyte:
+;@r0 and r1 are the inputs
+;@r0 should be a pointer
+;@r1 should be an offset
+;@r0 is also the return register
+push {r2,r3,r8,r14}
+	LDR R0, [R0,R1] ;@loads most significant bits
 	;@junk instruction:
 	MOV R0, R0
 pop {r2,r3,r8,r15}

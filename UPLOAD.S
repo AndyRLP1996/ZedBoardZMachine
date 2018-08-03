@@ -30,6 +30,7 @@ push {r14}
 	BLEQ checksum
 	CMP R0, #1 ;@checks that checksum returns true (file is valid)
 	CMP R2, #128
+	;@ second checksum
 	MOV R0, R7
 	MOV R1, #28
 	BLEQ memoryread ;@should return 0x942d in r0
@@ -106,8 +107,3 @@ push {R1,R2,R3,R8,R14}
 	MOV R0, #0
 	MOVEQ R0, #1
 pop {R1,R2,R3,R8,R15}
-
-
-
-
-

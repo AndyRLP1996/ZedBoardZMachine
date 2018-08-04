@@ -143,7 +143,7 @@ push {r14}
 		MOV R3, R0
 		;@extract bit 6
 			MOV R1,R0
-			LDR R2,=0b00100000
+			LDR R2,=0b01000000
 			ANDS R1,R2,R1
 			;@zero for one byte constant, 1 for one byte register indicator
 			MOVNE R10, #5
@@ -152,7 +152,7 @@ push {r14}
 
 		;@extract bit 5
 			MOV R1,R3
-			LDR R2,=0b00010000
+			LDR R2,=0b00100000
 			ANDS R1,R2,R1
 			;@zero for one byte constant, 1 for one byte register indicator
 			MOVNE R10, #7
@@ -170,11 +170,12 @@ push {r14}
 	Ctype:
 		;@extract bit 5 of byte
 			MOV R1,R0
-			LDR R2,=0b00010000
-			ANDS R1, R1, R2
+			LDR R2,=0b00100000
+			ANDS R1, R1, R2 ;@checks if byte 5 is 0 or 1
 			;@check if 0 or 1. if 0, opcount is 2, if 1, is variable
-			MOVEQ R12,#2
+			MOVEQ R12,#2 ;@2 indicates opcount is 2
 			MOVNE R12,#3 ;@3 indicates variable opcount
+			MOV R10,#9
 			BL fetchop
 		;@extract instruction indicator
 			MOV R1,R0
@@ -196,33 +197,48 @@ pop {r15}
 fetchop:;@R10 is the input, correctly stored operands are the output
 push {r8,r14}
 	;@ at this point R0 still contains the full encoded byte
-	;@MOV R3, R0;@ copies full byte
 	;@input determines which way to fetch operands.
 
 	;@1 is A type 16 bit constant
-		ADD R1, R4, #1
-		MOV R0, R7
-		BL memoryread ;@R0 now contains the 16 bit constant
+		CMP R10,#1
+		ADDEQ R1, R4, #1
+		MOVEQ R0, R7
+		BLEQ memoryread ;@R0 now contains the 16 bit constant
 		POPEQ {R8,R15}
 	;@2 is A type 8 bit constant
-		ADD R1, R4, #1
-		MOV R0, R7
-		BL memoryreadbyte
+		CMP R10,#2
+		ADDEQ R1, R4, #1
+		MOVEQ R0, R7
+		BLEQ memoryreadbyte
 		POPEQ {R8,R15}
 	;@3 is A type one register
-		
+		CMP R10,#3
+
 	;@4 is a type no operands
-
+		CMP R10, #4
+		MOVEQ R12, #0
+		POPEQ {R8,R15}
 	;@5 is b type first operand one byte constant
-
+		CMP R10,#5
+		ADDEQ R1, R4, #1
+		MOVEQ R0, R7
+		BLEQ memoryreadbyte
+		POPEQ {R8,R15}
 	;@6 is b type first operand register
-
+		CMP R10,#6
+		
 	;@7 is b type second operand 1 byte constant
-
+		CMP R10,#7
+		ADDEQ R1, R4, #2
+		MOVEQ R0, R7
+		BLEQ memoryreadbyte
+		POPEQ {R8,R15}
 	;@8 is b type second operand register
-
-	;@9 is c type
-
+		CMP R10,#8
+		
+	;@9 is c type 
+		CMP R10,#9
+		
 
 pop {r8,r15}
 

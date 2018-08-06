@@ -61,7 +61,7 @@ push {r12,r14}
 	;@read in global register locations
 	LDR R12,=0x0C
 	LDR R8,[R7,R12]
-	MOV R4, R9;@initialize zpc
+	MOV R4, R8;@initialize zpc
 pop {r12,r15}
 
 noheadermode:
@@ -109,18 +109,19 @@ push {r14}
 		MOV R12,#1
 		MOVEQ R12,#0
 		;@read operand type
+			;@isolates instruction indicator
+			LDR R2,=0b00001111
+			AND R3,R2,R3 ;@R3 now contains isolated instruction indicator
 		;@check 00, two byte constant
 			LDR R1,=0b00110000;@edit
 			ANDS R1, R1, R0
 			MOV R10, #1
 			BLEQ fetchop
-
 		;@check 01, one byte constant
 			LDR R1,=0b00010000
 			ANDS R1, R1, R0
 			MOV R10, #2
 			BLNE fetchop
-
 		;@check 10, one byte register indicator
 			LDR R1,=0b00100000
 			ANDS R1, R1, R0
@@ -130,24 +131,23 @@ push {r14}
 		;@check for 11, no operands
 			MOV R10, #4
 			BL fetchop
-
-		;@isolates instruction indicator
-			LDR R2,=0b00001111
-			AND R3,R2,R3 ;@R3 now contains isolated instruction indicator
-
 		BL decode
 		BL crashmode;@should only branch if none of the decode branches work
 
 	Btype:
 		MOV R12,#2;@opcount
 		MOV R3, R0
+		;@extract bits 4-0
+			LDR R2,=0b00011111
+			AND R3,R2,R3
+			;@R3 now contains instruction indicator
 		;@extract bit 6
 			MOV R1,R0
 			LDR R2,=0b01000000
 			ANDS R1,R2,R1
 			;@zero for one byte constant, 1 for one byte register indicator
-			MOVNE R10, #5
-			MOVEQ R10, #6
+			;@MOVNE R10, #5
+			;@MOVEQ R10, #6
 			BL fetchop
 
 		;@extract bit 5
@@ -155,47 +155,45 @@ push {r14}
 			LDR R2,=0b00100000
 			ANDS R1,R2,R1
 			;@zero for one byte constant, 1 for one byte register indicator
-			MOVNE R10, #7
-			MOVEQ R10, #8
+			;@MOVNE R10, #7
+			;@MOVEQ R10, #8
 			BL fetchop
-
-		;@extract bits 4-0
-			LDR R2,=0b00011111
-			AND R3,R2,R3
-			;@R3 now contains instruction indicator
 
 		BL decode
 		;@BL crashmode
 
 	Ctype:
-		;@extract bit 5 of byte
-			MOV R1,R0
-			LDR R2,=0b00100000
-			ANDS R1, R1, R2 ;@checks if byte 5 is 0 or 1
-			;@check if 0 or 1. if 0, opcount is 2, if 1, is variable
-			MOVEQ R12,#2 ;@2 indicates opcount is 2
-			MOVNE R12,#3 ;@3 indicates variable opcount
-			MOV R10,#9
-			BL fetchop
 		;@extract instruction indicator
 			MOV R1,R0
 			LDR R2,=0b00011111
 			AND R1,R2,R1
 			MOV R3, R1
 			;@R3 now contains instruction indicator, R12 contains opcount
-			MOV R10, #9
-
+		;@extract bit 5 of byte
+			MOV R1,R0
+			LDR R2,=0b00100000
+			ANDS R1, R1, R2 ;@checks if byte 5 is 0 or 1
+			;@check if 0 or 1. if 0, opcount is 2, if 1, is variable
+			MOVEQ R12,#2 ;@2 indicates opcount is 2
+			BLNE ctypevar
+			;@MOVNE R12,#3 ;@3 indicates variable opcount
+			;@MOV R10,#9
+			BL fetchop
 		BL decode
 		;@BL crashmode
-
 	Xtype: ;@fill in later if time
 	;@insert crash mode here
 	;@BNE crashmode
 	exitgamemode:
 pop {r15}
 
-fetchop:;@R10 is the input, correctly stored operands are the output
-push {r8,r14}
+ctypevar:
+push {r14}
+	
+pop {r15}
+
+fetchop:;@instruction indicator will be in R3, R12 holds the opcount
+push {r8,r10,r14}
 	;@ at this point R0 still contains the full encoded byte
 	;@input determines which way to fetch operands.
 
@@ -204,43 +202,58 @@ push {r8,r14}
 		ADDEQ R1, R4, #1
 		MOVEQ R0, R7
 		BLEQ memoryread ;@R0 now contains the 16 bit constant
-		POPEQ {R8,R15}
+		POPEQ {R8,r10,R15}
 	;@2 is A type 8 bit constant
 		CMP R10,#2
 		ADDEQ R1, R4, #1
 		MOVEQ R0, R7
 		BLEQ memoryreadbyte
-		POPEQ {R8,R15}
+		POPEQ {R8,r10,R15}
 	;@3 is A type one register
 		CMP R10,#3
+
 
 	;@4 is a type no operands
 		CMP R10, #4
 		MOVEQ R12, #0
-		POPEQ {R8,R15}
+		POPEQ {R8,r10,R15}
 	;@5 is b type first operand one byte constant
 		CMP R10,#5
 		ADDEQ R1, R4, #1
 		MOVEQ R0, R7
 		BLEQ memoryreadbyte
-		POPEQ {R8,R15}
+		POPEQ {R8,r10,R15}
 	;@6 is b type first operand register
 		CMP R10,#6
 		
+
 	;@7 is b type second operand 1 byte constant
 		CMP R10,#7
 		ADDEQ R1, R4, #2
 		MOVEQ R0, R7
 		BLEQ memoryreadbyte
-		POPEQ {R8,R15}
+		POPEQ {R8,r10,R15}
 	;@8 is b type second operand register
 		CMP R10,#8
 		
+
 	;@9 is c type 
 		CMP R10,#9
 		
 
-pop {r8,r15}
+pop {r8,r10,r15}
+
+zregfetch: ;@takes the address of the z register to fetch as input, and returns its contents
+push {r14} ;@r10 is the input
+	;@add 1 to R5 (z stack pointer) when pushing onto stack and subtract 1 when popping
+
+pop {r15}
+
+zregstore: ;@takes the address of the zregister and the contents you wish to store and stores the contents to the given z register
+push {r14} ;r10 and r11 are the inputs. 
+	L
+
+pop {r15}
 
 crashmode:
 push {r14}

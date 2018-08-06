@@ -9,6 +9,7 @@ pop {r15}
 ;@ R0 is operand 1
 ;@ R1 is operand 2
 ;@ tempop offsets 0, 2, 4, 6, 8, 10, 12, 14 store operands if it is variable operand type
+;@ tempop (from 0 onwards) also stores the encoded string that comes after one instruction (PRINT)
 ;@ R2 will store the extra byte required in some instructions (ADD, SUB, MUL, DIV, CALL_2S, PULL, MOD, NOT)
 ;@ R2 will also store branch byte 1, if it is a branch instruction (JE, JL, JG, TEST_ATTR)
 ;@ R8 will store branch byte 2 if it's a long branch (JE, JL, JG, TEST_ATTR)
@@ -61,7 +62,7 @@ div: ;@ - TWO OPERANDS - 0x17
 	
 print_num: ;@ - VARIABLE OPERAND COUNT - 0x06
 	PUSH {R9, R10, R11, R14}
-
+	
 	POP {R9, R10, R11, R15}
 	
 je: ;@ - TWO OPERANDS - 0x01
@@ -101,12 +102,16 @@ call_2n: ;@ - TWO OPERANDS - 0x1A
 	
 push: ;@ - VARIABLE OPERAND COUNT - 0x08
 	PUSH {R9, R10, R11, R14}
-	
+	LDR R9,=tempop ;@ Fetch first variable operand
+	LDR R10, [R9]
+	STR R10, [R5]
+	ADD R5, R5, #1
 	POP {R9, R10, R11, R15}
 	
 pull: ;@ - VARIABLE OPERAND COUNT - 0x09
 	PUSH {R9, R10, R11, R14}
-	
+	LDR R5, [R2]
+	SUB R5, R5, #1
 	POP {R9, R10, R11, R15}
 	
 print: ;@ - NO OPERANDS - 0x02
@@ -175,4 +180,3 @@ return_zprocedure:
 
 branch:
 	;@ R2 is the branch byte, R8 is the second branch byte (not used if it turns out it's a short branch)
-	

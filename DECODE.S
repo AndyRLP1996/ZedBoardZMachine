@@ -20,7 +20,7 @@ verify: ;@ - NO OPERANDS - 0xD
 	
 	POP {R9, R10, R11, R15}
 
-add: ;@ - TWO OPERANDS - 0x14
+add: ;@ - TWO OPERANDS - 0x14 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
 	ADD R9, R0, R1
 
@@ -30,7 +30,7 @@ add: ;@ - TWO OPERANDS - 0x14
 	BL memorywrite
 	POP {R9, R10, R11, R15}
 	
-sub: ;@ - TWO OPERANDS - 0x15
+sub: ;@ - TWO OPERANDS - 0x15 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
 	SUB R9, R0, R1
 
@@ -40,7 +40,7 @@ sub: ;@ - TWO OPERANDS - 0x15
 	BL memorywrite
 	POP {R9, R10, R11, R15}
 	
-mul: ;@ - TWO OPERANDS - 0x16
+mul: ;@ - TWO OPERANDS - 0x16 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
 	BL multiply
 	
@@ -50,7 +50,7 @@ mul: ;@ - TWO OPERANDS - 0x16
 	BL memorywrite
 	POP {R9, R10, R11, R15}
 	
-div: ;@ - TWO OPERANDS - 0x17
+div: ;@ - TWO OPERANDS - 0x17 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
 	BL divide
 	
@@ -60,47 +60,47 @@ div: ;@ - TWO OPERANDS - 0x17
 	BL memorywrite
 	POP {R9, R10, R11, R15}
 	
-print_num: ;@ - VARIABLE OPERAND COUNT - 0x06
+print_num: ;@ - VARIABLE OPERAND COUNT - 0x06 (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-je: ;@ - TWO OPERANDS - 0x01
+je: ;@ - TWO OPERANDS - 0x01 (B) OPCODE|SCREWED_UP_PSEUDO_C_TYPE
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-jl: ;@ - TWO OPERANDS - 0x02
+jl: ;@ - TWO OPERANDS - 0x02 (B) OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-jg: ;@ - TWO OPERANDS - 0x03
+jg: ;@ - TWO OPERANDS - 0x03 (B) OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-ret_popped: ;@ - NO OPERANDS - 0x08
+ret_popped: ;@ - NO OPERANDS - 0x08 (A) OPCODE
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-ret: ;@ - ONE OPERAND - 0x0B
+ret: ;@ - ONE OPERAND - 0x0B (A) OPCODE
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-call_2s: ;@ - TWO OPERANDS - 0x19
+call_2s: ;@ - TWO OPERANDS - 0x19 (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-call_2n: ;@ - TWO OPERANDS - 0x1A
+call_2n: ;@ - TWO OPERANDS - 0x1A (B) OPCODE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-push: ;@ - VARIABLE OPERAND COUNT - 0x08
+push: ;@ - VARIABLE OPERAND COUNT - 0x08 (C) ?
 	PUSH {R9, R10, R11, R14}
 	LDR R9,=tempop ;@ Fetch first variable operand
 	LDR R10, [R9]
@@ -108,58 +108,76 @@ push: ;@ - VARIABLE OPERAND COUNT - 0x08
 	ADD R5, R5, #1
 	POP {R9, R10, R11, R15}
 	
-pull: ;@ - VARIABLE OPERAND COUNT - 0x09
+pull: ;@ - VARIABLE OPERAND COUNT - 0x09 (C) ?
 	PUSH {R9, R10, R11, R14}
 	LDR R5, [R2]
 	SUB R5, R5, #1
 	POP {R9, R10, R11, R15}
 	
-print: ;@ - NO OPERANDS - 0x02
+print: ;@ - NO OPERANDS - 0x02 (A) OPCODE|ENCODED_STRING
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-test_attr: ;@ - TWO OPERANDS - 0x0A
+test_attr: ;@ - TWO OPERANDS - 0x0A OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-set_attr: ;@ - TWO OPERANDS - 0x0B
+set_attr: ;@ - TWO OPERANDS - 0x0B (B) OPCODE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-clear_attr: ;@  - TWO OPERANDS - 0x0C
+clear_attr: ;@  - TWO OPERANDS - 0x0C (B) OPCODE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-inc: ;@ - ONE OPERAND - 0x05
+inc: ;@ - ONE OPERAND - 0x05 (A) OPCODE|OPERAND1
+	PUSH {R9, R10, R11, R14}
+	MOV R1, R0
+	LDR R0,=zreg
+	BL memoryread
+	ADD R9, R0, #1
+	MOV R9, R9 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R0 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+dec: ;@ - ONE OPERAND - 0x06 (A) OPCODE|OPERAND1
+	PUSH {R9, R10, R11, R14}
+	MOV R1, R0
+	LDR R0,=zreg
+	BL memoryread
+	SUB R9, R0, #1
+	MOV R9, R9 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R0 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+call_1n: ;@ - ONE OPERAND - 0x0F  (A) OPCODE|OPERAND1
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-dec: ;@ - ONE OPERAND - 0x06
+mod: ;@ - TWO OPERANDS - 0x18 (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	BL modulus
+	MOV R0, R0 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R2 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+not: ;@ - VARIABLE OPERAND COUNT - 0x18 (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}
 	
-call_1n: ;@ - ONE OPERAND - 0x0F
-	PUSH {R9, R10, R11, R14}
-	
-	POP {R9, R10, R11, R15}
-	
-mod: ;@ - TWO OPERANDS - 0x18
-	PUSH {R9, R10, R11, R14}
-	
-	POP {R9, R10, R11, R15}
-	
-not: ;@ - VARIABLE OPERAND COUNT - 0x18
-	PUSH {R9, R10, R11, R14}
-	
-	POP {R9, R10, R11, R15}
-	
-print_char: ;@ VARIABLE OPERAND COUNT - 0x05
+print_char: ;@ VARIABLE OPERAND COUNT - 0x05 (C) ?
 	PUSH {R9, R10, R11, R14}
 	
 	POP {R9, R10, R11, R15}

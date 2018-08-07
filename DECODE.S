@@ -2,8 +2,22 @@
 
 decode:
 push {r14}
+	;@takes r3 in as instruction indicator
+	;@takes r0 and r1 as operand types
+	;@takes r12 as the count of the number of operands to fetch
+	;@will likely also take r10 as an indicator of what type of instruction and possibly 1 other thing
+	;@insert comparison of indicators here, with each case having its own call to fetchop
+	CMP R3,#0x0d
+	;@perform any necessary changes to input vars for fetchop here
+	BLEQ fetchop
+	BLEQ verify
 
-BLNE crashmode ;@executes if no matching instruction is found
+	CMP R3,#0x14
+	;@perform any necessary changes to input vars for fetchop here
+	BLEQ fetchop
+	BLEQ add
+
+	BLNE crashmode ;@executes if no matching instruction is found
 pop {r15}
 
 ;@ R0 is operand 1

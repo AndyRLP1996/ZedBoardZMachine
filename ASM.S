@@ -47,7 +47,7 @@ push {r14}
 
 pop {r15}
 
-headermode:
+headermode: ;@not quite done yet?
 push {r12,r14}
 	;@read in object table
 	LDR R12,=0x0A
@@ -100,7 +100,7 @@ push {r14}
 			CMP R1, #128
 		BNE exitgamemode
 		;@R0 still has opcode
-	Atype:
+	Atype:;@done
 		LDR R1,=0b00110000
 		MOV R3, R0
 		AND R2, R0, R1 ;@bits 5 and 4 extracted
@@ -115,23 +115,25 @@ push {r14}
 		;@check 00, two byte constant
 			LDR R1,=0b00110000;@edit
 			ANDS R1, R1, R0
-			MOV R10, #1
-			BLEQ fetchop
+			MOVNE R10, #1
+			BLEQ decode
 		;@check 01, one byte constant
 			LDR R1,=0b00010000
 			ANDS R1, R1, R0
-			MOV R10, #2
-			BLNE fetchop
+			MOVNE R10, #2
+			BLNE decode
 		;@check 10, one byte register indicator
 			LDR R1,=0b00100000
 			ANDS R1, R1, R0
-			MOV R10, #3
-			BLNE fetchop
+			MOVNE R10, #3
+			BLNE decode
 		;@R1 contains the opcode for all 3 scenarios of atype
 		;@check for 11, no operands
-			MOV R10, #4
-			BL fetchop
-		BL decode
+			LDR R1,=0b00110000
+			AND R2, R1, R0
+			CMP R2, R1
+			MOVEQ R10, #4
+			BLEQ decode
 		BL crashmode;@should only branch if none of the decode branches work
 
 	Btype:
@@ -141,6 +143,7 @@ push {r14}
 			LDR R2,=0b00011111
 			AND R3,R2,R3
 			;@R3 now contains instruction indicator
+
 		;@extract bit 6
 			MOV R1,R0
 			LDR R2,=0b01000000
@@ -148,8 +151,7 @@ push {r14}
 			;@zero for one byte constant, 1 for one byte register indicator
 			;@MOVNE R10, #5
 			;@MOVEQ R10, #6
-			BL fetchop
-
+			BL decode
 		;@extract bit 5
 			MOV R1,R3
 			LDR R2,=0b00100000
@@ -157,10 +159,8 @@ push {r14}
 			;@zero for one byte constant, 1 for one byte register indicator
 			;@MOVNE R10, #7
 			;@MOVEQ R10, #8
-			BL fetchop
-
-		BL decode
-		;@BL crashmode
+			BL decode
+		BL crashmode
 
 	Ctype:
 		;@extract instruction indicator
@@ -178,8 +178,7 @@ push {r14}
 			BLNE ctypevar
 			;@MOVNE R12,#3 ;@3 indicates variable opcount
 			;@MOV R10,#9
-			BL fetchop
-		BL decode
+			BL decode
 		;@BL crashmode
 	Xtype: ;@fill in later if time
 	;@insert crash mode here

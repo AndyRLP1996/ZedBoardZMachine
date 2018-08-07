@@ -1,83 +1,242 @@
-.global delay50th
-.global sendtoUART
-.global setupUART
-.global memoryread
-.global memoryreadbyte
+.global decode
 
-delay50th:
-push {R0,R14}
-	LDR R0, =150000 ;@use 150,000 for roughly a 50th of a second delay (0.02ms)
-	loop2:
-		SUB R0, R0, #1
-		ADD R0,R0,#1
-		SUB R0, R0, #1
-		CMP R0,#0
-		BNE loop2
-pop {R0,R15}
+decode:
+push {r14}
+	;@takes r3 in as instruction indicator
+	;@takes r0 and r1 as operand types
+	;@takes r12 as the count of the number of operands to fetch
+	;@will likely also take r10 as an indicator of what type of instruction and possibly 1 other thing
+	;@insert comparison of indicators here, with each case having its own call to fetchop
+	CMP R3,#0x0d
+	;@perform any necessary changes to input vars for fetchop here
+	BLEQ fetchop
+	BLEQ verify
 
-sendtoUART: ;@treats r0 as input register
-push {r1,r14} ;@assumes UART is set
-	LDR R1, =0xE0001030 ;@UART itself
-	STR R0, [R1]
-pop {r1,r15} ;@NOT DONE
+	CMP R3,#0x14
+	;@perform any necessary changes to input vars for fetchop here
+	BLEQ fetchop
+	BLEQ add
 
-setupUART:
-push {R1,R2,R3,R8,R9,R10,R12,r14}
-		LDR R1, =0xE0001030 ;@UART itself
-		LDR R2, =0xE0001004 ;@UART mode register (write 0x20)
-		LDR R3, =0xE0001018 ;@UART baud rate generator (write 0d62)
-		LDR R8, =0xE0001034 ;@UART baud rate divider (write 0d6)
-		LDR R9, =0xE0001000 ;@UART control register (write 0x117 to reset)
-		LDR R12, =0xE000102C ;@UART Fill register (check for 8)
-	initializeUART:
-		MOV R10, #0x20
-		STR R10, [R2]
-		MOV R10, #62
-		STR R10, [R3]
-		MOV R10, #6
-		STR R10, [R8]
-		MOV R10, #0x117
-		STR R10, [R9]
-pop {R1,R2,R3,R8,R9,R10,R12,r15}
+	BLNE crashmode ;@executes if no matching instruction is found
+pop {r15}
 
-memoryread:
-	;@r0 and r1 are the inputs
-	;@r0 should be a pointer
-	;@r1 should be an offset
-	;@r0 is also the return register
-push {r2,r3,r8,r14}
-	LDR R2, [R0,R1] ;@loads most significant bits
-	ADD R1, R1, #1
-	LDR R3, [R0,R1] ;@loads least significant bits
-	LDR R8,= 256
-	MUL R2, R2, R8
-	ADD R0, R2, R3
-	;@junk instruction:
-	MOV R0, R0
-pop {r2,r3,r8,r15}
+;@ R0 is operand 1
+;@ R1 is operand 2
+;@ tempop offsets 0, 2, 4, 6, 8, 10, 12, 14 store operands if it is variable operand type
+;@ tempop (from 0 onwards) also stores the encoded string that comes after one instruction (PRINT)
+;@ R2 will store the extra byte required in some instructions (ADD, SUB, MUL, DIV, CALL_2S, PULL, MOD, NOT)
+;@ R2 will also store branch byte 1, if it is a branch instruction (JE, JL, JG, TEST_ATTR, VERIFY)
+;@ R8 will store branch byte 2 if it's a long branch (JE, JL, JG, TEST_ATTR, VERIFY)
+;@ R12 will be the number of operands
 
-memoryreadbyte:
-	;@r0 and r1 are the inputs
-	;@r0 should be a pointer
-	;@r1 should be an offset
-	;@r0 is also the return register
-push {r2,r3,r8,r14}
-	LDR R0, [R0,R1] ;@loads most significant bits
-	;@junk instruction:
-	MOV R0, R0
-pop {r2,r3,r8,r15}
+verify: ;@ - NO OPERANDS - 0xD OPCODE|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) ;@ Branching not done yet
+	PUSH {R9, R10, R11, R14}
 
-memorywrite:
-push {R3,R10,R11,R14}
-	;@takes r0, r1, and r2 as input
-	;@r0 is a 16 bit value and r1 is the destination memory location
-	;@r2 is the offset
-	LDR R3,=0x00ff
-	AND R11, R0, R3 ;@R11 now holds the LSBs
-	LDR R3,=0xff00
-	AND R10,R0,R3
-	MOV R10, R10 LSR #8
-	STR R10, [R1,R2] ;@writes MSBs to desired address
-	ADD R2, R2, #1
-	STR R11, [R1,R2] ;@writes LSBs to next byte
-pop {R3,R10,R11,R15}
+	BL checksum
+	CMP R0, #1 ;@checks that checksum returns true (file is valid)
+	BNE crash ;@ ADD CRASH FUNCTIONALITY?
+	;@ second checksum
+	MOV R0, R7
+	MOV R1, #28
+	BLEQ memoryread ;@should return 0x942d in r0
+	LDR R1,=0x942d
+	CMP R0, R1 ;@checks that checksum works
+	BNE crash ;@ ADD CRASH FUNCTIONALITY?
+	POP {R9, R10, R11, R15}
+
+add: ;@ - TWO OPERANDS - 0x14 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	ADD R9, R0, R1
+
+	MOV R0, R9 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R2 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+sub: ;@ - TWO OPERANDS - 0x15 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	SUB R9, R0, R1
+
+	MOV R0, R9 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R2 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+mul: ;@ - TWO OPERANDS - 0x16 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	BL multiply
+	
+	MOV R0, R0 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R2 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+div: ;@ - TWO OPERANDS - 0x17 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	BL divide
+	
+	MOV R0, R0 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R2 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+print_num: ;@ - VARIABLE OPERAND COUNT - 0x06 (C) ?
+	PUSH {R9, R10, R11, R14}
+	LDR R9,=tempop
+	LDR R0, [R9]
+	BL hextoascii
+	BL sendtoUART
+	POP {R9, R10, R11, R15}
+	
+je: ;@ - TWO OPERANDS - 0x01 (B) OPCODE|SCREWED_UP_PSEUDO_C_TYPE
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+jl: ;@ - TWO OPERANDS - 0x02 (B) OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+jg: ;@ - TWO OPERANDS - 0x03 (B) OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+ret_popped: ;@ - NO OPERANDS - 0x08 (A) OPCODE
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+ret: ;@ - ONE OPERAND - 0x0B (A) OPCODE
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+call_2s: ;@ - TWO OPERANDS - 0x19 (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+call_2n: ;@ - TWO OPERANDS - 0x1A (B) OPCODE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+push: ;@ - VARIABLE OPERAND COUNT - 0x08 (C) ?
+	PUSH {R9, R10, R11, R14}
+	LDR R9,=tempop ;@ Fetch first variable operand
+	LDR R10, [R9]
+	STR R10, [R5]
+	ADD R5, R5, #1
+	POP {R9, R10, R11, R15}
+	
+pull: ;@ - VARIABLE OPERAND COUNT - 0x09 (C) ?
+	PUSH {R9, R10, R11, R14}
+	LDR R5, [R2]
+	SUB R5, R5, #1
+	POP {R9, R10, R11, R15}
+	
+print: ;@ - NO OPERANDS - 0x02 (A) OPCODE|ENCODED_STRING ;@ TODO
+	PUSH {R9, R10, R11, R14}
+	LDR R9,=tempop
+	printwhile1:
+		LDR R10, [R9]
+		AND R10, R10, #0b1000000
+		CMP R10, #0b1000000
+		LDR R10, [R9]
+		LDR R11, [R9, #1]
+		MULL R10, R0, R10, #256
+		ADD R0, R10, R11
+		BL hextoascii3 ;@ convert three characters of 5 bits each to characters stopbit|5|5|5
+		BL sendtoUART
+		ADD, R9, R9, #2
+		BNE printwhile1
+	endprintwhile1:
+	POP {R9, R10, R11, R15}
+	
+test_attr: ;@ - TWO OPERANDS - 0x0A OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+set_attr: ;@ - TWO OPERANDS - 0x0B (B) OPCODE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+clear_attr: ;@  - TWO OPERANDS - 0x0C (B) OPCODE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+inc: ;@ - ONE OPERAND - 0x05 (A) OPCODE|OPERAND1
+	PUSH {R9, R10, R11, R14}
+	MOV R1, R0
+	LDR R0,=zreg
+	BL memoryread
+	ADD R9, R0, #1
+	MOV R9, R9 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R0 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+dec: ;@ - ONE OPERAND - 0x06 (A) OPCODE|OPERAND1
+	PUSH {R9, R10, R11, R14}
+	MOV R1, R0
+	LDR R0,=zreg
+	BL memoryread
+	SUB R9, R0, #1
+	MOV R9, R9 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R0 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+call_1n: ;@ - ONE OPERAND - 0x0F  (A) OPCODE|OPERAND1
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+mod: ;@ - TWO OPERANDS - 0x18 (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
+	PUSH {R9, R10, R11, R14}
+	BL modulus
+	MOV R0, R0 ;@ for memorywrite function, R0 is what is being written
+	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
+	MOV R2, R2 ;@ for memorywrite function, R2 is the memory offset
+	BL memorywrite
+	POP {R9, R10, R11, R15}
+	
+not: ;@ - VARIABLE OPERAND COUNT - 0x18 (C) ?
+	PUSH {R9, R10, R11, R14}
+	
+	POP {R9, R10, R11, R15}
+	
+print_char: ;@ VARIABLE OPERAND COUNT - 0x05 (C) ?
+	PUSH {R9, R10, R11, R14}
+	LDR R9,=tempop
+	LDR R0, [R9]
+	BL sendtoUART
+	POP {R9, R10, R11, R15}
+
+;@ ZPROCEDURES PROGRAMMING BEGIN
+
+;@ 20th, 22nd, 24th, and 28th Zregisters are used for ZProcedure bookkeeping
+
+call_zprocedure:
+	ADD R6, R6, #1
+	;@ "zero out the set of Zregisters that you have been given"
+	;@ etc, unfinished
+
+return_zprocedure:
+	
+	
+;@ BRANCH EXCECUTION
+
+branch:
+	;@ R2 is the branch byte, R8 is the second branch byte (not used if it turns out it's a short branch)

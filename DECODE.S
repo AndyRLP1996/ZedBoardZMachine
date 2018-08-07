@@ -25,13 +25,23 @@ pop {r15}
 ;@ tempop offsets 0, 2, 4, 6, 8, 10, 12, 14 store operands if it is variable operand type
 ;@ tempop (from 0 onwards) also stores the encoded string that comes after one instruction (PRINT)
 ;@ R2 will store the extra byte required in some instructions (ADD, SUB, MUL, DIV, CALL_2S, PULL, MOD, NOT)
-;@ R2 will also store branch byte 1, if it is a branch instruction (JE, JL, JG, TEST_ATTR)
-;@ R8 will store branch byte 2 if it's a long branch (JE, JL, JG, TEST_ATTR)
+;@ R2 will also store branch byte 1, if it is a branch instruction (JE, JL, JG, TEST_ATTR, VERIFY)
+;@ R8 will store branch byte 2 if it's a long branch (JE, JL, JG, TEST_ATTR, VERIFY)
 ;@ R12 will be the number of operands
 
-verify: ;@ - NO OPERANDS - 0xD
+verify: ;@ - NO OPERANDS - 0xD OPCODE|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) ;@ Branching not done yet
 	PUSH {R9, R10, R11, R14}
-	
+
+	BL checksum
+	CMP R0, #1 ;@checks that checksum returns true (file is valid)
+	BNE crash ;@ ADD CRASH FUNCTIONALITY?
+	;@ second checksum
+	MOV R0, R7
+	MOV R1, #28
+	BLEQ memoryread ;@should return 0x942d in r0
+	LDR R1,=0x942d
+	CMP R0, R1 ;@checks that checksum works
+	BNE crash ;@ ADD CRASH FUNCTIONALITY?
 	POP {R9, R10, R11, R15}
 
 add: ;@ - TWO OPERANDS - 0x14 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
@@ -76,7 +86,10 @@ div: ;@ - TWO OPERANDS - 0x17 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	
 print_num: ;@ - VARIABLE OPERAND COUNT - 0x06 (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	LDR R9,=tempop
+	LDR R0, [R9]
+	BL hextoascii
+	BL sendtoUART
 	POP {R9, R10, R11, R15}
 	
 je: ;@ - TWO OPERANDS - 0x01 (B) OPCODE|SCREWED_UP_PSEUDO_C_TYPE
@@ -128,9 +141,22 @@ pull: ;@ - VARIABLE OPERAND COUNT - 0x09 (C) ?
 	SUB R5, R5, #1
 	POP {R9, R10, R11, R15}
 	
-print: ;@ - NO OPERANDS - 0x02 (A) OPCODE|ENCODED_STRING
+print: ;@ - NO OPERANDS - 0x02 (A) OPCODE|ENCODED_STRING ;@ TODO
 	PUSH {R9, R10, R11, R14}
-	
+	LDR R9,=tempop
+	printwhile1:
+		LDR R10, [R9]
+		AND R10, R10, #0b1000000
+		CMP R10, #0b1000000
+		LDR R10, [R9]
+		LDR R11, [R9, #1]
+		MULL R10, R0, R10, #256
+		ADD R0, R10, R11
+		BL hextoascii3 ;@ convert three characters of 5 bits each to characters stopbit|5|5|5
+		BL sendtoUART
+		ADD, R9, R9, #2
+		BNE printwhile1
+	endprintwhile1:
 	POP {R9, R10, R11, R15}
 	
 test_attr: ;@ - TWO OPERANDS - 0x0A OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
@@ -193,7 +219,9 @@ not: ;@ - VARIABLE OPERAND COUNT - 0x18 (C) ?
 	
 print_char: ;@ VARIABLE OPERAND COUNT - 0x05 (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	LDR R9,=tempop
+	LDR R0, [R9]
+	BL sendtoUART
 	POP {R9, R10, R11, R15}
 
 ;@ ZPROCEDURES PROGRAMMING BEGIN

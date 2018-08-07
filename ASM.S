@@ -192,7 +192,7 @@ push {r14}
 pop {r15}
 
 fetchop:;@instruction indicator will be in R3, R12 holds the opcount
-push {r8,r10,r14}
+push {r8,r14}
 	;@ at this point R0 still contains the full encoded byte
 	;@input determines which way to fetch operands.
 
@@ -216,6 +216,7 @@ push {r8,r10,r14}
 		CMP R10, #4
 		MOVEQ R12, #0
 		POPEQ {R8,r10,R15}
+		
 	;@5 is b type first operand one byte constant
 		CMP R10,#5
 		ADDEQ R1, R4, #1
@@ -240,7 +241,7 @@ push {r8,r10,r14}
 		CMP R10,#9
 		
 
-pop {r8,r10,r15}
+pop {r8,r15}
 
 zregfetch: ;@takes the address of the z register to fetch as input, and returns its contents
 push {r14} ;@r10 is the input

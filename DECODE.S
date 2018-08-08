@@ -34,14 +34,14 @@ verify: ;@ - NO OPERANDS - 0xD OPCODE|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) ;@ Bra
 
 	BL checksum
 	CMP R0, #1 ;@checks that checksum returns true (file is valid)
-	BNE crash ;@ ADD CRASH FUNCTIONALITY?
+	BNE crashmode
 	;@ second checksum
 	MOV R0, R7
 	MOV R1, #28
 	BLEQ memoryread ;@should return 0x942d in r0
 	LDR R1,=0x942d
 	CMP R0, R1 ;@checks that checksum works
-	BNE crash ;@ ADD CRASH FUNCTIONALITY?
+	BNE crashmode
 	POP {R9, R10, R11, R15}
 
 add: ;@ - TWO OPERANDS - 0x14 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?

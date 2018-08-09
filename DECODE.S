@@ -179,6 +179,7 @@ push {r8,r10,r14} ;@should be done
 		CMP R10, #10
 		BLEQ ctypevar
 		POPEQ {R8,r10,R15}
+	BL crashmode
 pop {r8,r10,r15}
 
 ctypevar:

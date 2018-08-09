@@ -23,7 +23,7 @@ push {r14}
 pop {r15}
 
 fetchop:;@instruction indicator will be in R3, R12 holds the opcount
-push {r8,r14} ;@should be done
+push {r8,r10,r14} ;@should be done
 	;@ at this point R0 still contains the full encoded byte
 	;@input determines which way to fetch operands.
 
@@ -111,16 +111,73 @@ push {r8,r14} ;@should be done
 		CMP R10, #10
 		BLEQ ctypevar
 		POPEQ {R8,r10,R15}
-pop {r8,r15}
+pop {r8,r10,r15}
 
 ctypevar:
-push {r14}
+push {R1,R2,R8,R9,R10,R11,R14}
 	;@handles the decode and fetching of the operands for c type instructions
-
-pop {r15}
+	;@ returns the pointer to tempop in R0
+	MOV R0, R7
+	MOV R1, R4
+	BL memoryreadbyte
+	ADD R4, R4, #1
+	MOV R8, R0
+	;@R8 holds the raw byte
+	MOV R12, #0 ;@change opcount to match actual number of operands
+	MOV R10, #0 ;keeps track of number of bytes to jump
+	ctypeloop:
+		MOV R9, R12 LSL #1
+		LDR R11,=0b11000000
+		MOV R11, R11 LSR R9
+		AND R1, R11, R0 ;@LSR R9;@isolates the firsts 2 digits
+		RSB R9, R9, #8
+		MOV R1, R1 LSR R9
+		CMP R1, #3 ;@no further operands, done
+		BEQ donectype
+		CMP R1, #2 ;@register
+			ADDEQ R12, #1
+			ADDEQ R10, #1
+			ADDEQ R1, R10, R4
+			MOVEQ R0, R7
+			BLEQ memoryreadbyte
+			BLEQ zregfetch
+			MOVEQ R2, R12
+			LDREQ R1,=tempop
+			BLEQ memorywrite
+			ADDEQ R4, R4, #1
+		CMP R1, #1 ;@8 bit constant
+			ADDEQ R12, #1
+			ADDEQ R10, #1
+			ADDEQ R1, R10, R4
+			MOVEQ R0, R7
+			BLEQ memoryreadbyte
+			;@r0 is a 16 bit value and r1 is the destination memory location
+			;@r2 is the offset
+			MOVEQ R2, R12
+			LDREQ R1,=tempop
+			BLEQ memorywrite
+			ADDEQ R4, R4, #1
+		CMP R1, #0 ;@16 bit constant
+			ADDEQ R12, #1
+			ADDEQ R10, #1
+			ADDEQ R1, R10, R4
+			MOVEQ R0, R7
+			BLEQ memoryread
+			;@r0 is a 16 bit value and r1 is the destination memory location
+			;@r2 is the offset
+			MOVEQ R2, R12
+			LDREQ R1,=tempop
+			BLEQ memorywrite
+			ADDEQ R4, R4, #2
+		CMP R12, #4 ;@ acts as way to avoid issues after first byte
+		BEQ donectype
+		B ctypeloop:
+	donectype:
+	LDR R0,=tempop
+pop {R1,R2,R8,R9,R10,R11,R15}
 
 zregfetch: ;@takes the address of the z register to fetch as input, and returns its contents
-push {r14} ;@r10 is the input
+push {r14} ;@R0 is the input
 	;@add 1 to R5 (z stack pointer) when pushing onto stack and subtract 1 when popping
 	
 pop {r15}

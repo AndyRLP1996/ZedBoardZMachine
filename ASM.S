@@ -80,21 +80,23 @@ push {r14}
 	mainloop:
 		LDR R0,[R7,R4];@load opcode
 		ADD R4,R4,#1;@advance ZPC
+		LDR R8,=dumpingground
+		STR R0,[R8] ;@for crashmode
 		;@extract bits 7 and 6
-		LDR R1,=0b11000000
-		AND R1,R0,R1
+			LDR R1,=0b11000000
+			AND R1,R0,R1
 		;@check for A type
-		LDR R2,=0b10000000
-		CMP R2, R1
-		BEQ Atype
+			LDR R2,=0b10000000
+			CMP R2, R1
+			BEQ Atype
 		;@check for B type
-		LDR R2,=0b00000000
-		CMP R2, R1
-		BEQ Btype
+			LDR R2,=0b00000000
+			CMP R2, R1
+			BEQ Btype
 		;@check for C type
-		LDR R2,=0b11000000
-		CMP R2, R1
-		BEQ Ctype
+			LDR R2,=0b11000000
+			CMP R2, R1
+			BEQ Ctype
 		;@ load switches to check that board is still in game mode
 			LDR R12, =0x41220000;@switches
 			LDR R1, [R12]
@@ -191,11 +193,13 @@ push {r14}
 	exitgamemode: ;@should only ever be branched to if deliberately exiting game mode, thus crash comes first.
 pop {r15}
 
-crashmode:
+crashmode: ;@should be done
 push {r14}
 	;@send to UART the entire instruction and its location in memory (as an offset)
 	;@ first load into dumpingground the contents of the instruction, then send them 1 by 1 to UART
 		LDR R1,=dumpingground
+		LDR R8, [R1]
+		MOV R3, R8
 		MOV R2, #0
 		LDR R0,=10
 		STR R0,[R1,R2]
@@ -237,17 +241,38 @@ push {r14}
 		MOV R9, #0
 		crashloop1:
 			MOV R0, R3
-			LDR R10,=0b00000001
-			MOV R10, R10 LSL R9
+			LDR R11,=0b00000001
+			MOV R11, R11 LSL R9
 			ADD R9, R9, #1
-			AND R0, R10, R0
+			AND R0, R11, R0
 			BL hextoascii
 			STR R0,[R1,R2]
 			ADD R2, R2, #1
 			CMP R9, #8
 			BNE crashloop1
 	;@load operand bytes
-
+		;@R12 contains the opcount, R4 is ZPC
+		MOV R8, R12
+		MOV R10, #0
+		crashloop3:
+			MOV R9, #0
+			ADD R10, R4, R7
+			SUB R10, R10, R8
+			LDR R3, [R10]
+			crashloop2:
+				MOV R0, R3
+				LDR R11,=0b00000001
+				MOV R11, R11 LSL R9
+				ADD R9, R9, #1
+				AND R0, R11, R0
+				BL hextoascii
+				STR R0,[R1,R2]
+				ADD R2, R2, #1
+				CMP R9, #8
+				BNE crashloop2
+			SUB R8, R8, #1
+			CMP R8, #0
+			BNE crashloop3
 	;@write bytes to UART:
 		MOV R0, R1
 		MOV R1, R2

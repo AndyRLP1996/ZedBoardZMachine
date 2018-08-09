@@ -1,5 +1,4 @@
 .global decode
-.global verify
 
 decode:
 push {r14}
@@ -179,7 +178,6 @@ push {r8,r10,r14} ;@should be done
 		CMP R10, #10
 		BLEQ ctypevar
 		POPEQ {R8,r10,R15}
-	BL crashmode
 pop {r8,r10,r15}
 
 ctypevar:
@@ -246,10 +244,41 @@ push {R1,R2,R8,R9,R10,R11,R14}
 pop {R1,R2,R8,R9,R10,R11,R15}
 
 zregfetch: ;@takes the address of the z register to fetch as input, and returns its contents
-push {r14} ;@R0 is the input
+push {r11, r14} ;@R0 is the input
 	;@add 1 to R5 (z stack pointer) when pushing onto stack and subtract 1 when popping
+	CMP R0, #0
+	BEQ zregfetch_zstack
+	CMP R0, #15
+	BLT zregfetch_local
 	
-pop {r15}
+	zregfetch_zstack:
+		LDR R0, [R5]
+		SUB R5, R5, #1
+		LDR R0,=zreg
+		ADD R0, R0, #20
+		MOV R11, R0
+		BL memoryread
+		SUB R1, R0, #1
+		MOV R0, R11
+		BL memorywrite
+		B zregfetch_end
+	zregfetch_local
+		SUB R0, #0
+		MOV R0, R0 LSL #1
+		MOV R11, R6 LSL #6
+		ADD, R11, R0, R11
+		ADD R1, R11, #1 ;@ Get low-significant index
+		LDR R0,=zreg
+		BL memoryread
+		B zregfetch_end
+	zregfetch_global:
+		SUB R0, R0, #16
+		MOV R0, R0 LSL #1
+		LDR R11,=4001 ;@ Low order byte
+		ADD R0, R0, R11
+		
+	zregfetch_end:
+pop {r11, r15}
 
 ;@ R0 is operand 1
 ;@ R1 is operand 2
@@ -264,15 +293,14 @@ verify: ;@ - NO OPERANDS - 0xD OPCODE|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) ;@ Bra
 	PUSH {R9, R10, R11, R14}
 
 	BL checksum
-	MOV R9, R0
-	;@CMP R0, #1 ;@checks that checksum returns true (file is valid)
-	;@BNE crashmode
+	CMP R0, #1 ;@checks that checksum returns true (file is valid)
+	BNE crashmode
 	;@ second checksum
 	MOV R0, R7
 	MOV R1, #28
 	BLEQ memoryread ;@should return 0x942d in r0
-	;@LDR R1,=0x942d
-	CMP R0, R9 ;@checks that checksum works
+	LDR R1,=0x942d
+	CMP R0, R1 ;@checks that checksum works
 	BNE crashmode
 	POP {R9, R10, R11, R15}
 
@@ -369,8 +397,12 @@ push: ;@ - VARIABLE OPERAND COUNT - 0x08 (C) ?
 	
 pull: ;@ - VARIABLE OPERAND COUNT - 0x09 (C) ?
 	PUSH {R9, R10, R11, R14}
-	LDR R5, [R2]
-	SUB R5, R5, #1
+	LDR R9,=tempop ;@ Fetch first variable operand
+	LDR R10, [R9]
+	MOV R0, #0
+	BL zregfetch
+	STR R0, [R10]
+	;@ part of zregfetch - SUB R5, R5, #1
 	POP {R9, R10, R11, R15}
 	
 print: ;@ - NO OPERANDS - 0x02 (A) OPCODE|ENCODED_STRING ;@ TODO

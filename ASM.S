@@ -66,7 +66,7 @@ push {r12,r14}
 	MOV R4, R8;@initialize zpc
 pop {r12,r15}
 
-noheadermode:
+noheadermode: ;@not quite done yet?
 push {r12,r14}
 	LDR R11,=0x1000 ;@obj table
 	LDR R10,=0x2000 ;@dictionary
@@ -195,5 +195,5 @@ crashmode:
 push {r14}
 	;@send to UART the entire instruction and its location in memory (as an offset)
 	;@ first load into dumpingground the contents of the instruction, then send them 1 by 1 to UART
-
+	
 pop {r15}

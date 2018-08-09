@@ -23,7 +23,7 @@ push {r14}
 pop {r15}
 
 fetchop:;@instruction indicator will be in R3, R12 holds the opcount
-push {r8,r14}
+push {r8,r14} ;@should be done
 	;@ at this point R0 still contains the full encoded byte
 	;@input determines which way to fetch operands.
 
@@ -41,49 +41,88 @@ push {r8,r14}
 		POPEQ {R8,r10,R15}
 	;@3 is A type one register
 		CMP R10,#3
-
+		MOVEQ R0, R7
+		MOVEQ R1, R4
+		BLEQ memoryreadbyte
+		BLEQ zregfetch ;@will take R0 as input
+		POPEQ {R8,r10,R15}
 	;@4 is a type no operands
 		CMP R10, #4
 		MOVEQ R12, #0
 		POPEQ {R8,r10,R15}
 		
-	;@5 is b type first operand one byte constant
+	;@5 is b type both constants
 		CMP R10,#5
 		ADDEQ R1, R4, #1
 		MOVEQ R0, R7
 		BLEQ memoryreadbyte
-		POPEQ {R8,r10,R15}
-	;@6 is b type first operand register
-		CMP R10,#6
-		
-	;@7 is b type second operand 1 byte constant
-		CMP R10,#7
-		ADDEQ R1, R4, #2
+		ADDEQ R1, R4, #1
+		MOVEQ R8, R0
 		MOVEQ R0, R7
 		BLEQ memoryreadbyte
+		MOVEQ R1, R0
+		MOVEQ R0, R8
 		POPEQ {R8,r10,R15}
-	;@8 is b type second operand register
+	;@6 is b type first is constant, second is register
+		CMP R10,#6
+		ADDEQ R1, R4, #1
+		MOVEQ R0, R7
+		BLEQ memoryreadbyte
+		ADDEQ R1, R4, #1
+		MOVEQ R8, R0
+		MOVEQ R0, R7
+		BLEQ memoryreadbyte
+		BLEQ zregfetch
+		MOVEQ R1, R0
+		MOVEQ R0, R8
+		POPEQ {R8,r10,R15}
+	;@7 is b type first is register, second is constant
+		CMP R10,#7
+		ADDEQ R1, R4, #1
+		MOVEQ R0, R7
+		BLEQ memoryreadbyte
+		BLEQ zregfetch
+		ADDEQ R1, R4, #1
+		MOVEQ R8, R0
+		MOVEQ R0, R7
+		BLEQ memoryreadbyte
+		MOVEQ R1, R0
+		MOVEQ R0, R8
+		POPEQ {R8,r10,R15}
+	;@8 is b type both are registers
 		CMP R10,#8
-		
+		ADDEQ R1, R4, #1
+		MOVEQ R0, R7
+		BLEQ memoryreadbyte
+		BLEQ zregfetch
+		ADDEQ R1, R4, #1
+		MOVEQ R8, R0
+		MOVEQ R0, R7
+		BLEQ memoryreadbyte
+		BLEQ zregfetch
+		MOVEQ R1, R0
+		MOVEQ R0, R8
+		POPEQ {R8,r10,R15}
 	;@9 is c type opcount 2
 		CMP R10,#9
-
+		BLEQ ctypevar
+				POPEQ {R8,r10,R15}
 	;@10 is c type opcount variable
 		CMP R10, #10
-				
-
+		BLEQ ctypevar
+		POPEQ {R8,r10,R15}
 pop {r8,r15}
 
 ctypevar:
 push {r14}
-	;@handles the decode of the number of and location of inputs for c type instructions with variable opcount
+	;@handles the decode and fetching of the operands for c type instructions
 
 pop {r15}
 
 zregfetch: ;@takes the address of the z register to fetch as input, and returns its contents
 push {r14} ;@r10 is the input
 	;@add 1 to R5 (z stack pointer) when pushing onto stack and subtract 1 when popping
-
+	
 pop {r15}
 
 ;@ R0 is operand 1

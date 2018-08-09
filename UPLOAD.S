@@ -86,7 +86,7 @@ PUSH {r1,r2,r3,r8,r9,r10,r12,R14}
 			BNE fileintakeloop
 POP {r1,r2,r3,r8,r9,r10,r12,R15}
 
-checksum:
+checksum: ;@need to remove now that verify has been added
 	;@R0 is return register
 	;@returns 0 if not valid, 1 if valid
 push {R1,R2,R3,R8,R14}

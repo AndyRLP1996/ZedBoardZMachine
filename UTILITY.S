@@ -15,11 +15,25 @@ push {R0,R14}
 		BNE loop2
 pop {R0,R15}
 
-sendtoUART: ;@treats r0 as input register
-push {r1,r14} ;@assumes UART is set
-	LDR R1, =0xE0001030 ;@UART itself
-	STR R0, [R1]
-pop {r1,r15} ;@NOT DONE
+sendtoUART: ;@R0 and R1 are inputs. R0 should be a memory pointer and R1 is a number of bytes to upload
+push {R2,R3,R9,R10,R11,R12,R14} 
+	BL setupUART
+	MOV R2, #0
+	LDR R12, =0xE0001030 ;@UART itself
+	LDR R11, =0xE000102C ;@UART Fill register (check for 8)
+	sendloop:
+		LDR R3, [R0,R2]
+		MOV R9, #16
+		waittillnotfull:
+			LDR R10, [R11]
+			AND R10, R10, R9
+			CMP R10, R9
+			BEQ waittillnotfull
+		ADD R2, R2, #1
+		CMP R2, R1
+		BNE sendloop
+	BEQ crash
+pop {R2,R3,R9,R10,R11,R12,R15} ;@should be done
 
 setupUART:
 push {R1,R2,R3,R8,R9,R10,R12,r14}
@@ -81,3 +95,6 @@ push {R3,R10,R11,R14}
 	ADD R2, R2, #1
 	STR R11, [R1,R2] ;@writes LSBs to next byte
 pop {R3,R10,R11,R15}
+
+crash:
+.end

@@ -18,6 +18,73 @@ push {r14}
 	BLEQ add
 	CMP R3,#0x14
 	BLEQ gamemode
+	
+	CMP R3,#0x15
+	BLEQ sub
+	CMP R3,#0x15
+	BLEQ gamemode
+	
+	CMP R3,#0x16
+	BLEQ mul
+	CMP R3,#0x16
+	BLEQ gamemode
+	
+	CMP R3,#0x17
+	BLEQ div
+	CMP R3,#0x17
+	BLEQ gamemode
+	
+	CMP R10,#10
+	BNE print_num_skip
+	CMP R3,#0x06
+	BLEQ print_num ;@ variable operand count
+	CMP R3,#0x06
+	BLEQ gamemode
+	print_num_skip:
+	
+	CMP R3,#0x08
+	BLEQ push
+	CMP R3,#0x08
+	BLEQ gamemode
+	
+	CMP R3,#0x09
+	BLEQ pull
+	CMP R3,#0x09
+	BLEQ gamemode
+	
+	CMP R3,#0x02
+	BLEQ print
+	CMP R3,#0x02
+	BLEQ gamemode
+	
+	CMP R10,#10
+	BEQ inc_skip
+	CMP R3,#0x05
+	BLEQ inc ;@ one operand
+	CMP R3,#0x05
+	BLEQ gamemode
+	inc_skip:
+	
+	CMP R10,#10
+	BEQ dec_skip
+	CMP R3,#0x06
+	BLEQ dec ;@ one operand
+	CMP R3,#0x06
+	BLEQ gamemode
+	dec_skip:
+	
+	CMP R3,#0x18
+	BLEQ mod
+	CMP R3,#0x18
+	BLEQ gamemode
+	
+	CMP R10,#10
+	BNE print_char_skip
+	CMP R3,#0x05
+	BLEQ print_char ;@ variable operand count
+	CMP R3,#0x05
+	BLEQ gamemode
+	print_char_skip:
 
 	BLNE crashmode ;@executes if no matching instruction is found
 pop {r15}
@@ -199,37 +266,37 @@ print_num: ;@ - VARIABLE OPERAND COUNT - 0x06 (C) ?
 	
 je: ;@ - TWO OPERANDS - 0x01 (B) OPCODE|SCREWED_UP_PSEUDO_C_TYPE
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 jl: ;@ - TWO OPERANDS - 0x02 (B) OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 jg: ;@ - TWO OPERANDS - 0x03 (B) OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 ret_popped: ;@ - NO OPERANDS - 0x08 (A) OPCODE
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 ret: ;@ - ONE OPERAND - 0x0B (A) OPCODE
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 call_2s: ;@ - TWO OPERANDS - 0x19 (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 call_2n: ;@ - TWO OPERANDS - 0x1A (B) OPCODE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 push: ;@ - VARIABLE OPERAND COUNT - 0x08 (C) ?
@@ -266,17 +333,17 @@ print: ;@ - NO OPERANDS - 0x02 (A) OPCODE|ENCODED_STRING ;@ TODO
 	
 test_attr: ;@ - TWO OPERANDS - 0x0A OPCODE|OPERAND1|OPERAND2|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 set_attr: ;@ - TWO OPERANDS - 0x0B (B) OPCODE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 clear_attr: ;@  - TWO OPERANDS - 0x0C (B) OPCODE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 inc: ;@ - ONE OPERAND - 0x05 (A) OPCODE|OPERAND1
@@ -305,7 +372,7 @@ dec: ;@ - ONE OPERAND - 0x06 (A) OPCODE|OPERAND1
 	
 call_1n: ;@ - ONE OPERAND - 0x0F  (A) OPCODE|OPERAND1
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 mod: ;@ - TWO OPERANDS - 0x18 (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
@@ -319,7 +386,7 @@ mod: ;@ - TWO OPERANDS - 0x18 (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	
 not: ;@ - VARIABLE OPERAND COUNT - 0x18 (C) ?
 	PUSH {R9, R10, R11, R14}
-	
+	BL crashmode
 	POP {R9, R10, R11, R15}
 	
 print_char: ;@ VARIABLE OPERAND COUNT - 0x05 (C) ?

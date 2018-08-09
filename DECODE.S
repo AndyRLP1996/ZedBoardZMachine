@@ -7,15 +7,17 @@ push {r14}
 	;@takes r12 as the count of the number of operands to fetch
 	;@will likely also take r10 as an indicator of what type of instruction and possibly 1 other thing
 	;@insert comparison of indicators here, with each case having its own call to fetchop
+	BL fetchop
+
 	CMP R3,#0x0d
-	;@perform any necessary changes to input vars for fetchop here
-	BLEQ fetchop
 	BLEQ verify
+	CMP R3,#0x0d
+	BLEQ gamemode
 
 	CMP R3,#0x14
-	;@perform any necessary changes to input vars for fetchop here
-	BLEQ fetchop
 	BLEQ add
+	CMP R3,#0x14
+	BLEQ gamemode
 
 	BLNE crashmode ;@executes if no matching instruction is found
 pop {r15}
@@ -40,7 +42,6 @@ push {r8,r14}
 	;@3 is A type one register
 		CMP R10,#3
 
-
 	;@4 is a type no operands
 		CMP R10, #4
 		MOVEQ R12, #0
@@ -55,7 +56,6 @@ push {r8,r14}
 	;@6 is b type first operand register
 		CMP R10,#6
 		
-
 	;@7 is b type second operand 1 byte constant
 		CMP R10,#7
 		ADDEQ R1, R4, #2
@@ -65,16 +65,18 @@ push {r8,r14}
 	;@8 is b type second operand register
 		CMP R10,#8
 		
-
-	;@9 is c type 
+	;@9 is c type opcount 2
 		CMP R10,#9
-		
+
+	;@10 is c type opcount variable
+		CMP R10, #10
+				
 
 pop {r8,r15}
 
 ctypevar:
 push {r14}
-	;@
+	;@handles the decode of the number of and location of inputs for c type instructions with variable opcount
 
 pop {r15}
 
@@ -83,13 +85,6 @@ push {r14} ;@r10 is the input
 	;@add 1 to R5 (z stack pointer) when pushing onto stack and subtract 1 when popping
 
 pop {r15}
-
-zregstore: ;@takes the address of the zregister and the contents you wish to store and stores the contents to the given z register
-push {r14} ;r10 and r11 are the inputs. 
-	;@
-
-pop {r15}
-
 
 ;@ R0 is operand 1
 ;@ R1 is operand 2

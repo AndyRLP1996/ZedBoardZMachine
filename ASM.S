@@ -6,6 +6,8 @@
 .global tempop
 .global dumpingground
 .global zreg
+.global crashmode
+.global gamemode
 
 .align 4
 zmemory: .space 2000000
@@ -136,54 +138,57 @@ push {r14}
 			BLEQ decode
 		BL crashmode;@should only branch if none of the decode branches work
 
-	Btype:
+	Btype: ;@done
 		MOV R12,#2;@opcount
 		MOV R3, R0
 		;@extract bits 4-0
 			LDR R2,=0b00011111
 			AND R3,R2,R3
 			;@R3 now contains instruction indicator
-
 		;@extract bit 6
 			MOV R1,R0
 			LDR R2,=0b01000000
-			ANDS R1,R2,R1
-			;@zero for one byte constant, 1 for one byte register indicator
-			;@MOVNE R10, #5
-			;@MOVEQ R10, #6
-			BL decode
+			AND R8,R2,R1
 		;@extract bit 5
 			MOV R1,R3
 			LDR R2,=0b00100000
-			ANDS R1,R2,R1
+			AND R1,R2,R1
 			;@zero for one byte constant, 1 for one byte register indicator
-			;@MOVNE R10, #7
-			;@MOVEQ R10, #8
+			;@ 4 possible cases. 5 for both are constants. 6 for first is constant, second is register. 7 for first is register, second is constant. 8 for both are registers
+			MOV R1, R1 LSL #1
+			ADD R1, R8, R1
+			CMP R1, #0
+			MOVEQ R10, #5 ;@both are constants
+			CMP R1, #1
+			MOVEQ R10, #6 ;@second is register
+			CMP R1, #2
+			MOVEQ R10, #7
+			CMP R1, #3
+			MOVEQ R10, #8
 			BL decode
 		BL crashmode
-
 	Ctype:
 		;@extract instruction indicator
 			MOV R1,R0
 			LDR R2,=0b00011111
 			AND R1,R2,R1
 			MOV R3, R1
-			;@R3 now contains instruction indicator, R12 contains opcount
+			;@R3 now contains instruction indicator, R12 will contain the opcount
 		;@extract bit 5 of byte
 			MOV R1,R0
 			LDR R2,=0b00100000
 			ANDS R1, R1, R2 ;@checks if byte 5 is 0 or 1
 			;@check if 0 or 1. if 0, opcount is 2, if 1, is variable
 			MOVEQ R12,#2 ;@2 indicates opcount is 2
-			BLNE ctypevar
-			;@MOVNE R12,#3 ;@3 indicates variable opcount
-			;@MOV R10,#9
+			MOVEQ R10, #9 ;@is code for opcount=2
+			MOVNE R10, #10 ;@indicates opcount is variable
+			MOVNE R12,#3 ;@3 indicates variable opcount, will get readjusted at decode function
 			BL decode
-		;@BL crashmode
+		BL crashmode
 	Xtype: ;@fill in later if time
 	;@insert crash mode here
-	;@BNE crashmode
-	exitgamemode:
+	BL crashmode
+	exitgamemode: ;@should only ever be branched to if deliberately exiting game mode, thus crash comes first.
 pop {r15}
 
 crashmode:

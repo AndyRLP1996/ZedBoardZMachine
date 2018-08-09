@@ -3,6 +3,8 @@
 .global setupUART
 .global memoryread
 .global memoryreadbyte
+.global crash
+.global sendlotstoUART
 
 delay50th:
 push {R0,R14}
@@ -15,7 +17,13 @@ push {R0,R14}
 		BNE loop2
 pop {R0,R15}
 
-sendtoUART: ;@R0 and R1 are inputs. R0 should be a memory pointer and R1 is a number of bytes to upload
+sendtoUART: ;@R0 is input
+push {R2,R3,R9,R10,R11,R12,R14} 
+	LDR R12, =0xE0001030 ;@UART itself
+	STR R0,[R12]
+pop {R2,R3,R9,R10,R11,R12,R15} ;@should be done
+
+sendlotstoUART:;@R0 and R1 are inputs. R0 should be a memory pointer and R1 is a number of bytes to upload
 push {R2,R3,R9,R10,R11,R12,R14} 
 	BL setupUART
 	MOV R2, #0
@@ -32,7 +40,7 @@ push {R2,R3,R9,R10,R11,R12,R14}
 		ADD R2, R2, #1
 		CMP R2, R1
 		BNE sendloop
-	BEQ crash
+	;@BEQ crash
 pop {R2,R3,R9,R10,R11,R12,R15} ;@should be done
 
 setupUART:

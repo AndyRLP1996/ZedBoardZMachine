@@ -27,15 +27,12 @@ push {r14}
 	CMP R2, #128
 	BLEQ upload
 	CMP R2, #128
-	BLEQ checksum
-	CMP R0, #1 ;@checks that checksum returns true (file is valid)
-	CMP R2, #128
+	BL verify
+	;@BLEQ checksum
+	;@CMP R0, #1 ;@checks that checksum returns true (file is valid)
+	;@CMP R2, #128
 	;@ second checksum
-	MOV R0, R7
-	MOV R1, #28
-	BLEQ memoryread ;@should return 0x942d in r0
-	LDR R1,=0x942d
-	CMP R0, R1 ;@checks that checksum works
+
 pop {r15}
 
 zeroout:
@@ -88,10 +85,10 @@ POP {r1,r2,r3,r8,r9,r10,r12,R15}
 
 checksum: ;@need to remove now that verify has been added
 	;@R0 is return register
-	;@returns 0 if not valid, 1 if valid
 push {R1,R2,R3,R8,R14}
 	LDR R1,=0x40
 	LDR R2,=256000
+	SUB R2, R2, R1
 	LDR R0,=0xffff
 	MOV R8,#0
 	checksumloop1:
@@ -102,8 +99,8 @@ push {R1,R2,R3,R8,R14}
 		CMP R2,#0
 		BNE checksumloop1
 	AND R8, R8, R0
-	LDR R0,=0x942d
-	CMP R8, R0
-	MOV R0, #0
-	MOVEQ R0, #1
+	;@LDR R0,=0x942d
+	;@CMP R8, R0
+	MOV R0, R8
+	;@MOVEQ R0, #1
 pop {R1,R2,R3,R8,R15}

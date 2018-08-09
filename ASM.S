@@ -195,5 +195,62 @@ crashmode:
 push {r14}
 	;@send to UART the entire instruction and its location in memory (as an offset)
 	;@ first load into dumpingground the contents of the instruction, then send them 1 by 1 to UART
-	
+		LDR R1,=dumpingground
+		MOV R2, #0
+		LDR R0,=10
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+		LDR R0,=13
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+	;@stores "CRASH!:" to the memory to read
+		LDR R0,=67 ;@C
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+		LDR R0,=82;@R
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+		LDR R0,=65 ;@A
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+		LDR R0,=83 ;@S
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+		LDR R0,=72 ;@H
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+		LDR R0,=33 ;@!
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+		LDR R0,=58 ;@:
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+	;@stores current memory address to memory as ASCII
+		MOV R0, R4
+		BL hextoascii
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+		LDR R0,=32
+		STR R0,[R1,R2]
+		ADD R2, R2, #1
+	;@load in the instruction indicator
+		MOV R9, #0
+		crashloop1:
+			MOV R0, R3
+			LDR R10,=0b00000001
+			MOV R10, R10 LSL R9
+			ADD R9, R9, #1
+			AND R0, R10, R0
+			BL hextoascii
+			STR R0,[R1,R2]
+			ADD R2, R2, #1
+			CMP R9, #8
+			BNE crashloop1
+	;@load operand bytes
+
+	;@write bytes to UART:
+		MOV R0, R1
+		MOV R1, R2
+		BL sendlotstoUART
+	B crash
 pop {r15}

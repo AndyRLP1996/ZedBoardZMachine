@@ -1,4 +1,5 @@
 .global decode
+.global verify
 
 decode:
 push {r14}
@@ -262,14 +263,15 @@ verify: ;@ - NO OPERANDS - 0xD OPCODE|BRANCHBYTE1|(SOMETIMES BRANCHBYTE2) ;@ Bra
 	PUSH {R9, R10, R11, R14}
 
 	BL checksum
-	CMP R0, #1 ;@checks that checksum returns true (file is valid)
-	BNE crashmode
+	MOV R9, R0
+	;@CMP R0, #1 ;@checks that checksum returns true (file is valid)
+	;@BNE crashmode
 	;@ second checksum
 	MOV R0, R7
 	MOV R1, #28
 	BLEQ memoryread ;@should return 0x942d in r0
-	LDR R1,=0x942d
-	CMP R0, R1 ;@checks that checksum works
+	;@LDR R1,=0x942d
+	CMP R0, R9 ;@checks that checksum works
 	BNE crashmode
 	POP {R9, R10, R11, R15}
 

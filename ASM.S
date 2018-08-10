@@ -217,32 +217,32 @@ push {r14}
 		STRB R0,[R1,R2]
 		ADD R2, R2, #1
 	;@stores "CRASH!:" to the memory to read
-		LDRB R0,=67 ;@C
-		STRB R0,[R1,R2]
+		LDR R0,=67 ;@C
+		STR R0,[R1,R2]
 		ADD R2, R2, #1
-		LDRB R0,=82;@R
-		STRB R0,[R1,R2]
+		LDR R0,=82;@R
+		STR R0,[R1,R2]
 		ADD R2, R2, #1
-		LDRB R0,=65 ;@A
-		STRB R0,[R1,R2]
+		LDR R0,=65 ;@A
+		STR R0,[R1,R2]
 		ADD R2, R2, #1
-		LDRB R0,=83 ;@S
-		STRB R0,[R1,R2]
+		LDR R0,=83 ;@S
+		STR R0,[R1,R2]
 		ADD R2, R2, #1
-		LDRB R0,=72 ;@H
-		STRB R0,[R1,R2]
+		LDR R0,=72 ;@H
+		STR R0,[R1,R2]
 		ADD R2, R2, #1
-		LDRB R0,=33 ;@!
-		STRB R0,[R1,R2]
+		LDR R0,=33 ;@!
+		STR R0,[R1,R2]
 		ADD R2, R2, #1
-		LDRB R0,=58 ;@:
-		STRB R0,[R1,R2]
+		LDR R0,=58 ;@:
+		STR R0,[R1,R2]
 		ADD R2, R2, #1
 	;@stores current memory address to memory as ASCII
 		MOV R0, R4
-		PUSH {R2, R3}
+		PUSH {R1,R2, R3}
 		BL hextoascii
-		POP {R2, R3}
+		POP {R1,R2, R3}
 		STRB R0,[R1,R2]
 		ADD R2, R2, #1
 		LDR R0,=32
@@ -256,9 +256,9 @@ push {r14}
 			MOV R11, R11, LSL R9
 			ADD R9, R9, #1
 			AND R0, R11, R0
-			PUSH {R2, R3}
+			PUSH {R1,R2, R3}
 			BL hextoascii
-			POP {R2, R3}
+			POP {R1,R2, R3}
 			STRB R0,[R1,R2]
 			ADD R2, R2, #1
 			CMP R9, #8
@@ -278,9 +278,9 @@ push {r14}
 				MOV R11, R11, LSL R9
 				ADD R9, R9, #1
 				AND R0, R11, R0
-				PUSH {R2, R3}
+				PUSH {R1,R2, R3}
 				BL hextoascii
-				POP {R2, R3}
+				POP {R1,R2, R3}
 				STRB R0,[R1,R2]
 				ADD R2, R2, #1
 				CMP R9, #8
@@ -291,6 +291,7 @@ push {r14}
 	;@write bytes to UART:
 		MOV R0, R1
 		MOV R1, R2
+		;@ADD R1, R1, #9
 		;@LDR R0,=dumpingground
 		BL sendlotstoUART
 	B HCF

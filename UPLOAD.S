@@ -28,7 +28,7 @@ push {r14}
 	CMP R2, #128
 	BLEQ upload
 	CMP R2, #128
-	;@BL verify
+	BL verify
 pop {r15}
 
 zeroout:

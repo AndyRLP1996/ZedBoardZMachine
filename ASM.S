@@ -285,6 +285,12 @@ push {r14}
 				ADD R2, R2, #1
 				CMP R9, #8
 				BNE crashloop2
+			LDR R0,=10
+			STRB R0,[R1,R2]
+			ADD R2, R2, #1
+			LDR R0,=13
+			STRB R0,[R1,R2]
+			ADD R2, R2, #1
 			SUB R8, R8, #1
 			CMP R8, #0
 			BNE crashloop3

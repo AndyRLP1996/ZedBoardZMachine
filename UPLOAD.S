@@ -28,12 +28,7 @@ push {r14}
 	CMP R2, #128
 	BLEQ upload
 	CMP R2, #128
-	BL verify
-	;@BLEQ checksum
-	;@CMP R0, #1 ;@checks that checksum returns true (file is valid)
-	;@CMP R2, #128
-	;@ second checksum
-
+	;@BL verify
 pop {r15}
 
 zeroout:

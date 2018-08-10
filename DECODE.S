@@ -327,8 +327,9 @@ sub: ;@ - TWO OPERANDS - 0x15 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 
 mul: ;@ - TWO OPERANDS - 0x16 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
+	PUSH {R1,R2,R3}
 	BL multiply
-
+	POP {R1,R2,R3}
 	MOV R0, R0 ;@ for memorywrite function, R0 is what is being written
 	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
 	MOV R2, R2 ;@ for memorywrite function, R2 is the memory offset
@@ -337,8 +338,9 @@ mul: ;@ - TWO OPERANDS - 0x16 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 
 div: ;@ - TWO OPERANDS - 0x17 - (B) OPCODE|EXTRABYTE|OPERAND1|OPERAND2 (C) ?
 	PUSH {R9, R10, R11, R14}
+	PUSH {R1,R2,R3}
 	BL divide
-
+	POP {R1,R2,R3}
 	MOV R0, R0 ;@ for memorywrite function, R0 is what is being written
 	LDR R1,=zreg ;@ for memorywrite function, R1 is the memory type
 	MOV R2, R2 ;@ for memorywrite function, R2 is the memory offset
@@ -349,7 +351,9 @@ print_num: ;@ - VARIABLE OPERAND COUNT - 0x06 (C) ?
 	PUSH {R9, R10, R11, R14}
 	LDR R9,=tempop
 	LDR R0, [R9]
+	PUSH {R1,R2,R3}
 	BL hextoascii
+	POP {R1,R2,R3}
 	BL sendtoUART
 	POP {R9, R10, R11, R15}
 
